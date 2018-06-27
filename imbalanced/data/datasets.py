@@ -36,6 +36,47 @@ class Dataset(TorchDataset):
         pass
 
 
+class DatasetWrapper(Dataset):
+    """Base class for datasets that come from wrapping another dataset object.
+
+    E.g. resamplers or other pre-processors.
+    """
+
+    def __init__(self, dataset):
+        self._dataset = None
+        self.dataset = dataset
+
+    @property
+    def dataset(self):
+        return self._dataset
+
+    @dataset.setter
+    def dataset(self, dataset):
+        assert isinstance(dataset, Dataset),\
+            'Wrapped object must be an instance of Dataset (or a subclass).'
+        self._dataset = dataset
+
+    @abstractmethod
+    def __getitem__(self, idx):
+        """Get a data row by index.
+
+        :param idx:  the index of the desired row
+        :type  idx:  int
+        :return:     the desired row, if it exists
+        :rtype:      torch.Tensor
+        """
+        pass
+
+    @abstractmethod
+    def __len__(self):
+        """Get the total number of rows in the dataset.
+
+        :return:  the number of rows
+        :rtype:   int
+        """
+        pass
+
+
 class SimpleDataset(Dataset):
     """Wrapper to create Dataset object from common tensor-like objects.
 
