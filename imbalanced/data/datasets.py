@@ -20,10 +20,12 @@ class Dataset(TorchDataset):
 
     @abstractmethod
     def __getitem__(self, idx):
-        """Get a row from the dataset by index.
+        """Get a data row by index.
 
-        :param idx:
-        :return:
+        :param idx:  the index of the desired row
+        :type  idx:  int
+        :return:     the desired row, if it exists
+        :rtype:      torch.Tensor
         """
         pass
 
@@ -31,7 +33,8 @@ class Dataset(TorchDataset):
     def __len__(self):
         """Get the total number of rows in the dataset.
 
-        :return:
+        :return:  the number of rows
+        :rtype:   int
         """
         pass
 
@@ -78,10 +81,11 @@ class DatasetWrapper(Dataset):
 
 
 class SimpleDataset(Dataset):
-    """Wrapper to create Dataset object from common tensor-like objects.
+    """Simple dataset from common tensor-like objects.
 
-    Allows simple objects e.g. numpy arrays, list-of-lists to be wrapped with
-    Dataset's interface and used in processes that require said interface.
+    Allows common tensor-like objects e.g. numpy arrays, list-of-lists to be
+    augmented with Dataset's interface and used in processes that require said
+    interface.
     """
 
     def __init__(self, inputs, targets):
