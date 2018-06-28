@@ -7,7 +7,7 @@ from torch.optim.optimizer import Optimizer
 class LearningAlgorithm:
     """Defines (the key elements of) a learning algorithm."""
 
-    def __init__(self, criterion, optimizer, patience):
+    def __init__(self, criterion, optimizer, patience=5):
         """Create a LearningAlgorithm object.
 
         :param criterion:  the optimization criterion
