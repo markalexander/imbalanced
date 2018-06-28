@@ -72,3 +72,25 @@ class LearningAlgorithm:
              '`torch.optim.optimizer.Optimizer`. '
              'Received `{}` instead.'.format(type(optimizer)))
         self._optimizer = optimizer
+
+    @property
+    def patience(self):
+        """Get the patience value.
+
+        :return:  the patience value
+        :rtype:   int
+        """
+        return self._patience
+
+    @patience.setter
+    def patience(self, patience):
+        """Set the patience value.
+
+        :param patience:  the patience value
+        :type  patience:  int
+        :return:          None
+        """
+        assert int(patience) == patience,\
+            ('The `patience` argument must be an integer. '
+             'Received `{}` instead.'.format(type(patience)))
+        self._patience = patience
