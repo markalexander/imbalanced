@@ -4,8 +4,11 @@
 This file contains class definitions for the various post-processing methods.
 """
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class Postprocessor(ABC):
-    pass
+
+    @abstractmethod
+    def __call__(self, inputs):
+        pass
