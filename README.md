@@ -7,6 +7,7 @@ Big data friendly.
 **N.B. this is pre-alpha and not yet functioning software.**
 
 
+<!--
 ## Getting started
 
 Install the `imbalanced` package with pip:
@@ -30,7 +31,7 @@ Train and use a pipeline with SMOTE and re-calibration:
     predictions = pipeline.predict(inputs)
 
 Where `dataset` is your PyTorch dataset, and `net` is a net module object.
-
+-->
 
 ## Why not the original `imbalanced-learn` package?
 
