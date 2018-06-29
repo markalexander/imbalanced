@@ -5,6 +5,12 @@ import numpy as np
 from ..datasets import SimpleDataset, MaskedDataset
 
 
+def dataset_rows_equal(row1, row2):
+    """Utility functionf or comparing rows of form (inputs, outputs),
+    as returned by __getitem__ on our datasets."""
+    return (row1[0] == row2[0]).all() and (row1[1] == row2[1]).all()
+
+
 class TestSimpleDataset:
 
     def test_indexes_numpy_ndarray(self):
@@ -61,16 +67,14 @@ class TestMaskedDataset:
         i_masked = 0
         for i_orig in range(len(d_orig)):
             if mask[i_orig]:
-                assert (d_orig[i_orig][0] == d_masked[i_masked][0]).all()
-                assert (d_orig[i_orig][1] == d_masked[i_masked][1]).all()
+                assert dataset_rows_equal(d_orig[i_orig], d_masked[i_masked])
                 i_masked += 1
 
     def test_all_rows_active_by_default(self):
         d_masked, d_orig = self.make_random()
         assert len(d_masked) == len(d_orig)
         for i in range(len(d_orig)):
-            assert (d_orig[i][0] == d_masked[i][0]).all()
-            assert (d_orig[i][1] == d_masked[i][1]).all()
+            assert dataset_rows_equal(d_orig[i], d_masked[i])
 
     def test_rejects_invalid_mask(self):
         # Not an ndarray
