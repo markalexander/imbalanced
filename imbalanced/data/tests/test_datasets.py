@@ -58,6 +58,7 @@ class TestSimpleDataset:
 class TestMaskedDataset:
 
     def test_masked_indexes_correctly(self):
+        """Test whether the masked indexing/length works correctly."""
         mask = np.array([True, False, True, False, True], dtype=np.bool)
         d_masked, d_orig = self.make_random(
             inputs_shape=(5, 5),
@@ -71,12 +72,15 @@ class TestMaskedDataset:
                 i_masked += 1
 
     def test_all_rows_active_by_default(self):
+        """Test whether the default behaviour (no masking) works correctly."""
         d_masked, d_orig = self.make_random()
         assert len(d_masked) == len(d_orig)
         for i in range(len(d_orig)):
             assert dataset_rows_equal(d_orig[i], d_masked[i])
 
     def test_rejects_invalid_mask(self):
+        """Test whether the mask() method, and by extension the constructor,
+        rejects invalid input."""
         # Not an ndarray
         with pytest.raises(AssertionError):
             self.make_random(mask=1)
