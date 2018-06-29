@@ -20,10 +20,10 @@ Train and use a pipeline with SMOTE and re-calibration:
     pipeline = imb.Pipeline(
         imb.preprocessors.SMOTE(),
         net,
-        img.postprocessors.BinnedCalibrator()
+        imb.postprocessors.BinnedCalibrator()
     )
 
-    # Train the net and recalibrator
+    # Train the net and calibrator
     pipeline.train(dataset)
 
     # Get some predictions
