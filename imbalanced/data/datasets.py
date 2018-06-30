@@ -45,9 +45,10 @@ class DatasetWrapper(Dataset):
     E.g. resamplers or other pre-processors.
     """
 
-    def __init__(self, dataset):
+    def __init__(self, dataset=None):
         self._dataset = None
-        self.dataset = dataset
+        if dataset is not None:
+            self.dataset = dataset
 
     @property
     def dataset(self):
@@ -127,52 +128,3 @@ class SimpleDataset(Dataset):
         :rtype:   int
         """
         return len(self._inputs)
-
-
-class MaskedDataset(DatasetWrapper):
-    """Dataset wrapper that masks a given dataset."""
-
-    def __init__(self, dataset, mask=None):
-        super().__init__(dataset)
-        self._active_rows = None
-        if mask is not None:
-            self.mask(mask)
-        else:
-            # Default to all rows active
-            self.mask(np.ones((len(dataset),), dtype=np.bool))
-
-    def mask(self, mask):
-        """Apply the given row mask to the dataset.
-
-        :param mask:  the mask
-        :type  mask:  numpy.ndarray
-        :return:
-        """
-        assert isinstance(mask, np.ndarray),\
-            'Mask object must be numpy ndarray'
-        assert len(mask) == len(self.dataset),\
-            'Mask length must match dataset length'
-        # Flatten and recheck
-        # If length differs now then it was too wide to begin with
-        mask = mask.flatten()
-        assert len(mask) == len(self.dataset),\
-            'Mask must be flat or 1-dimensional'
-        self._active_rows = np.nonzero(mask)[0]
-
-    def __getitem__(self, idx):
-        """Get a data row by index.
-
-        :param idx:  the index of the desired row
-        :type  idx:  int
-        :return:     the desired row, if it exists
-        :rtype:      torch.Tensor
-        """
-        return self.dataset[self._active_rows[idx]]
-
-    def __len__(self):
-        """Get the total number of rows in the dataset.
-
-        :return:  the number of rows
-        :rtype:   int
-        """
-        return len(self._active_rows)
