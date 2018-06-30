@@ -19,32 +19,58 @@ class Pipeline:
         Pre-processors -> Net architecture -> Learning algo -> Post-processors
     """
 
-    def __init__(self, net, learner, preprocessors=None, postprocessors=None):
+    def __init__(self, preprocessors, net, learner, postprocessors):
         """Create a Pipeline object.
 
+        :param preprocessors:   a (list of) pre-processor(s), which may be empty
+                                or None for no pre-processing
+        :type  preprocessors:   Preprocessor or list[Preprocessor] or None
         :param net:             a neural network object
         :type  net:             torch.nn.Module
         :param learner:         a learning algorithm specification
         :type  learner:         LearningAlgorithm
-        :param preprocessors:   a (list of) preprocessor(s)
-        :type  preprocessors:   Preprocessor or list[Preprocessor]
-        :param postprocessors:  a (list of) postprocessor(s)
-        :type  postprocessors:  Postprocessor or list[Postprocessor]
+        :param postprocessors:  a (list of) post-processor(s), which may be
+                                empty or None for no post-processing
+        :type  postprocessors:  Postprocessor or list[Postprocessor] or None
         """
         # Init
+        self._preprocessors = None
         self._net = None
         self._learner = None
-        self._preprocessors = None
         self._postprocessors = None
         # Set
-        self.net = net
-        self.learner = learner
         if preprocessors is None:
             preprocessors = []
         self.preprocessors = preprocessors
+        self.net = net
+        self.learner = learner
         if postprocessors is None:
             postprocessors = []
         self.postprocessors = postprocessors
+
+    @property
+    def preprocessors(self):
+        """Get the current pre-processor(s).
+
+        :return:  the list of pre-processors
+        :rtype:   list[Preprocessor]
+        """
+        return self._preprocessors
+
+    @preprocessors.setter
+    def preprocessors(self, preprocessors):
+        """Set the pre-processors.
+
+        :param preprocessors:  the preprocessor or list of preprocessors to set
+        :type  preprocessors:  Preprocessor or list[Preprocessor]
+        :return:               None
+        :rtype:                None
+        """
+        if not isinstance(preprocessors, list):
+            preprocessors = [preprocessors]
+        for p in preprocessors:
+            assert issubclass(type(p), Preprocessor)
+            self._preprocessors.append(p)
 
     @property
     def net(self):
@@ -83,30 +109,6 @@ class Pipeline:
         self._learner = learner
 
     @property
-    def preprocessors(self):
-        """Get the current pre-processor(s).
-
-        :return:  the list of pre-processors
-        :rtype:   list[Preprocessor]
-        """
-        return self._preprocessors
-
-    @preprocessors.setter
-    def preprocessors(self, preprocessors):
-        """Set the pre-processors.
-
-        :param preprocessors:  the preprocessor or list of preprocessors to set
-        :type  preprocessors:  Preprocessor or list[Preprocessor]
-        :return:               None
-        :rtype:                None
-        """
-        if not isinstance(preprocessors, list):
-            preprocessors = [preprocessors]
-        for p in preprocessors:
-            assert issubclass(type(p), Preprocessor)
-            self._preprocessors.append(p)
-
-    @property
     def postprocessors(self):
         """Get the current post-processors.
 
@@ -127,6 +129,22 @@ class Pipeline:
             assert issubclass(type(p), Postprocessor)
             self._postprocessors.append(p)
 
+    def train(self, dataset):
+        """Train the pipeline, including the network and the post-processors.
+
+        :return:
+        """
+        # Pre-process the data
+        for preprocessor in self.preprocessors:
+            dataset = preprocessor.process(dataset)
+
+        # Train the net
+        # todo
+
+        # Train the post-processors
+        for postprocessor in self.postprocessors:
+            postprocessor.train(dataset, self.net(dataset))
+
     def predict(self, inputs):
         """Return the end-to-end prediction(s) for the given input(s).
 
@@ -138,7 +156,7 @@ class Pipeline:
         """
         output = self.net(inputs)
         for postprocessor in self.postprocessors:
-            output = postprocessor(output)
+            output = postprocessor.process(output)
         return output
 
     def __call__(self, inputs):
