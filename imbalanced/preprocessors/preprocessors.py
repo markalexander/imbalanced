@@ -6,23 +6,71 @@ This file contains class definitions for the various types of pre-processor.
 
 from abc import ABC, abstractmethod
 import numpy as np
-from ..datasets import ResampledDataset
+from ..datasets import Dataset, ResampledDataset
 
 
 class Preprocessor(ABC):
     """Pre-processor base class."""
 
     @abstractmethod
-    def process(self, dataset):
+    def process(self, dataset: Dataset) -> Dataset:
+        """Process a dataset according to the pre-processor.
+
+        Args:
+            dataset: The dataset to be processed.
+
+        Returns:
+            The processed dataset.
+        """
         pass
 
 
 class Resampler(Preprocessor):
-    """Pre-processor base class."""
+    """Resampler base class."""
 
-    def process(self, dataset):
+    def process(self, dataset: Dataset) -> Dataset:
+        """Process a dataset according to the pre-processor.
+
+        Args:
+            dataset: The dataset to be processed.
+
+        Returns:
+            The processed dataset.
+        """
         return self.resample(dataset)
 
     @abstractmethod
-    def resample(self, dataset):
+    def resample(self, dataset: Dataset) -> ResampledDataset:
+        """Resample a dataset.
+
+        Args:
+            dataset: The dataset to be resampled.
+
+        Returns:
+            The resampled dataset.
+        """
         pass
+
+
+class RandomSubsampler(Resampler):
+    """Purely random subsampler.
+
+    Resamples all examples at random, regardless of class.
+    """
+
+    def __init__(self, rate: float) -> None:
+        self.rate = rate
+
+    def resample(self, dataset: Dataset) -> ResampledDataset:
+        """Resample a dataset.
+
+        Args:
+            dataset: The dataset to be resampled.
+
+        Returns:
+            The resampled dataset.
+        """
+        original_len = len(dataset)
+        target_len = int(round(self.rate * original_len))
+        samples = np.random.randint(0, original_len, target_len)
+        return ResampledDataset(dataset, samples)
