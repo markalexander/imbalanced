@@ -8,11 +8,13 @@ imbalanced, through a variety of methods.  The new object can then be used as a
 dataset in its own right.
 """
 
-from .datasets import DatasetWrapper
+from abc import abstractmethod
+from .datasets import Dataset, ResampledDataset
 
 
-class Imbalancer(DatasetWrapper):
+class Imbalancer:
     """Base class for all imbalancers."""
 
-    def __init__(self, dataset):
-        super().__init__(dataset)
+    @abstractmethod
+    def imbalance(self, dataset: Dataset) -> ResampledDataset:
+        pass

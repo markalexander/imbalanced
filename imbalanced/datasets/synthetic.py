@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from sklearn.datasets import make_classification, make_regression
-from .datasets import SimpleDataset
+from .generic import SimpleDataset
 
 
 class SKLearnSyntheticClassification(SimpleDataset):
