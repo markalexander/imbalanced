@@ -7,16 +7,16 @@ from torch.optim.optimizer import Optimizer
 class LearningAlgorithm:
     """Defines (the key elements of) a learning algorithm."""
 
-    def __init__(self, criterion, optimizer, patience=5):
+    def __init__(self, criterion: _Loss,
+                 optimizer: Optimizer, patience: int = 5) -> None:
         """Create a LearningAlgorithm object.
 
-        :param criterion:  the optimization criterion
-        :type  criterion:  object
-        :param optimizer:  the optimizer
-        :type  optimizer:  torch.optim.optimizer.Optimizer
-        :param patience:   the number of epochs after which to terminate when
-                           no improvement is seen in validation set performance
-        :type  patience:   int
+        Args:
+            criterion: The optimization criterion.
+            optimizer: The optimizer.
+            patience:  The number of epochs after which to terminate when no
+                       improvement is seen in validation set performance.
+
         """
         # Init
         self._criterion = None
@@ -28,21 +28,22 @@ class LearningAlgorithm:
         self.patience = patience
 
     @property
-    def criterion(self):
+    def criterion(self) -> _Loss:
         """Get the criterion.
 
-        :return:  the criterion
-        :rtype:   torch.nn.modules.loss._Loss
+        Returns:
+            The criterion.
+
         """
         return self._criterion
 
     @criterion.setter
-    def criterion(self, criterion):
+    def criterion(self, criterion: _Loss) -> None:
         """Set the criterion.
 
-        :param criterion:  the criterion
-        :type  criterion:  torch.nn.modules.loss._Loss
-        :return:           None
+        Args:
+            criterion: The criterion to be set.
+
         """
         assert isinstance(criterion, _Loss),\
             ('The `criterion` argument must be an instance of '
@@ -51,21 +52,21 @@ class LearningAlgorithm:
         self._criterion = criterion
 
     @property
-    def optimizer(self):
+    def optimizer(self) -> Optimizer:
         """Get the optimizer.
 
-        :return:  the optimizer
-        :rtype:   torch.optim.optimizer.Optimizer
+        Returns:
+            The optimizer.
         """
         return self._optimizer
 
     @optimizer.setter
-    def optimizer(self, optimizer):
+    def optimizer(self, optimizer: Optimizer) -> None:
         """Set the optimizer.
 
-        :param optimizer:  the optimizer
-        :type  optimizer:  torch.optim.optimizer.Optimizer
-        :return:           None
+        Args:
+            optimizer: The optimizer to be set
+
         """
         assert isinstance(optimizer, Optimizer),\
             ('The `optimizer` argument must be an instance of '
@@ -74,21 +75,21 @@ class LearningAlgorithm:
         self._optimizer = optimizer
 
     @property
-    def patience(self):
+    def patience(self) -> int:
         """Get the patience value.
 
-        :return:  the patience value
-        :rtype:   int
+        Returns:
+            The patience value.
         """
         return self._patience
 
     @patience.setter
-    def patience(self, patience):
+    def patience(self, patience: int):
         """Set the patience value.
 
-        :param patience:  the patience value
-        :type  patience:  int
-        :return:          None
+        Args:
+            patience: The patience value to be set.
+
         """
         assert int(patience) == patience,\
             ('The `patience` argument must be an integer. '
