@@ -10,5 +10,12 @@ from abc import ABC, abstractmethod
 class Postprocessor(ABC):
 
     @abstractmethod
-    def __call__(self, inputs):
+    def train(self, original_dataset, predictions):
         pass
+
+    @abstractmethod
+    def process(self, inputs):
+        pass
+
+    def __call__(self, inputs):
+        self.process(inputs)
