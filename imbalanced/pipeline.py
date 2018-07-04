@@ -4,9 +4,12 @@
 This file contains the basic definition for an imbalanced data 'pipeline'.
 """
 
+import torch
 from torch.nn import Module
-from ..preprocessors import Preprocessor
-from ..postprocessors import Postprocessor
+from typing import List, Union, Optional
+from .datasets import Dataset
+from .preprocessors import Preprocessor
+from .postprocessors import Postprocessor
 from .learner import LearningAlgorithm
 
 
@@ -19,19 +22,23 @@ class Pipeline:
         Pre-processors -> Net architecture -> Learning algo -> Post-processors
     """
 
-    def __init__(self, preprocessors, net, learner, postprocessors):
-        """Create a Pipeline object.
+    def __init__(self,
+                 preprocessors: Optional[Union[List[Preprocessor],
+                                               Preprocessor]],
+                 net: Module,
+                 learner: LearningAlgorithm,
+                 postprocessors: Optional[Union[List[Postprocessor],
+                                                Postprocessor]]) -> None:
+        """Create a pipeline object.
 
-        :param preprocessors:   a (list of) pre-processor(s), which may be empty
-                                or None for no pre-processing
-        :type  preprocessors:   Preprocessor or list[Preprocessor] or None
-        :param net:             a neural network object
-        :type  net:             torch.nn.Module
-        :param learner:         a learning algorithm specification
-        :type  learner:         LearningAlgorithm
-        :param postprocessors:  a (list of) post-processor(s), which may be
-                                empty or None for no post-processing
-        :type  postprocessors:  Postprocessor or list[Postprocessor] or None
+        Args:
+            preprocessors:  A (list of) pre-processor(s), which may be empty
+                            or None for no pre-processing.
+            net:            A neural network.
+            learner:        A learning algorithm specification.
+            postprocessors: A (list of) post-processor(s), which may be empty
+                            or None for no post-processing.
+
         """
         # Init
         self._preprocessors = None
@@ -49,22 +56,24 @@ class Pipeline:
         self.postprocessors = postprocessors
 
     @property
-    def preprocessors(self):
+    def preprocessors(self) -> List[Preprocessor]:
         """Get the current pre-processor(s).
 
-        :return:  the list of pre-processors
-        :rtype:   list[Preprocessor]
+        Returns:
+            The list of pre-processors.
+
         """
         return self._preprocessors
 
     @preprocessors.setter
-    def preprocessors(self, preprocessors):
+    def preprocessors(self,
+                      preprocessors: Union[List[Preprocessor],
+                                           Preprocessor]) -> None:
         """Set the pre-processors.
 
-        :param preprocessors:  the preprocessor or list of preprocessors to set
-        :type  preprocessors:  Preprocessor or list[Preprocessor]
-        :return:               None
-        :rtype:                None
+        Args:
+            preprocessors: The preprocessor or list of preprocessors to set.
+
         """
         if not isinstance(preprocessors, list):
             preprocessors = [preprocessors]
@@ -73,55 +82,66 @@ class Pipeline:
             self._preprocessors.append(p)
 
     @property
-    def net(self):
+    def net(self) -> Module:
         """Get the current network object.
 
-        :return:
+        Returns:
+            The current network object.
+
         """
         return self._net
 
     @net.setter
-    def net(self, net):
+    def net(self, net: Module):
         """Set the network object.
 
-        :param net:
-        :return:
+        Args:
+            net: A neural network.
+
         """
         assert isinstance(net, Module)
         self._net = net
 
     @property
-    def learner(self):
+    def learner(self) -> LearningAlgorithm:
         """Get the current learning algorithm.
 
-        :return:
+        Returns:
+            The current learning algorithm.
+
         """
         return self._learner
 
     @learner.setter
-    def learner(self, learner):
+    def learner(self, learner: LearningAlgorithm):
         """Set the learning algorithm.
 
-        :param learner:
-        :return:
+        Args:
+            learner: The learning algorithm to be set.
+
         """
         assert isinstance(learner, LearningAlgorithm)
         self._learner = learner
 
     @property
-    def postprocessors(self):
+    def postprocessors(self) -> List[Preprocessor]:
         """Get the current post-processors.
 
-        :return:
+        Returns:
+            The current post-processors.
+
         """
         return self._postprocessors
 
     @postprocessors.setter
-    def postprocessors(self, postprocessors):
+    def postprocessors(self,
+                       postprocessors: Union[List[Postprocessor],
+                                             Postprocessor]) -> None:
         """Set the post-processors.
 
-        :param postprocessors:
-        :return:
+        Args:
+            postprocessors: The post-processors to be set.
+
         """
         if not isinstance(postprocessors, list):
             postprocessors = [postprocessors]
@@ -129,10 +149,15 @@ class Pipeline:
             assert issubclass(type(p), Postprocessor)
             self._postprocessors.append(p)
 
-    def train(self, dataset):
+    def train(self, dataset: Dataset) -> None:
         """Train the pipeline, including the network and the post-processors.
 
-        :return:
+        Args:
+            dataset: The dataset to use for training.
+
+        Returns:
+            None
+
         """
         # Pre-process the data
         for preprocessor in self.preprocessors:
@@ -145,26 +170,34 @@ class Pipeline:
         for postprocessor in self.postprocessors:
             postprocessor.train(dataset, self.net(dataset))
 
-    def predict(self, inputs):
+    def predict(self, inputs: torch.Tensor) -> torch.Tensor:
         """Return the end-to-end prediction(s) for the given input(s).
 
         Includes any post-processing steps.  For net output only, call
         self.net(input) instead.
 
-        :param inputs:
-        :return:
+        Args:
+            inputs: The inputs to make predictions for.
+
+        Returns:
+            The tensor of predictions.
+
         """
         output = self.net(inputs)
         for postprocessor in self.postprocessors:
             output = postprocessor.process(output)
         return output
 
-    def __call__(self, inputs):
+    def __call__(self, inputs: torch.Tensor) -> torch.Tensor:
         """Shortcut for the predict() method.
 
-         For consistency with PyTorch model behaviour.
+         For consistency with PyTorch model API.
 
-        :param inputs:
-        :return:
+        Args:
+            inputs: The inputs to make predictions for.
+
+        Returns:
+            The tensor of predictions.
+
         """
         return self.predict(inputs)
