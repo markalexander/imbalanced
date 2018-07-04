@@ -159,6 +159,11 @@ class Pipeline:
             None
 
         """
+
+        # Validation
+        assert isinstance(dataset, Dataset),\
+            'Dataset argument must be an instance of Dataset (or a subclass)'
+
         # Pre-process the data
         for preprocessor in self.preprocessors:
             dataset = preprocessor.process(dataset)
