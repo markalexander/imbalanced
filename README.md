@@ -15,7 +15,17 @@ Python >= 3.5 is required.
 
     pip install imbalanced
 
-Train and use a pipeline with SMOTE and re-calibration:
+
+Automatically choose the best pipeline and train it:
+
+    import imbalanced as imb
+
+    pipeline = imb.AutoPipeline()
+    pipeline.train(dataset)
+    predictions = pipeline.predict(inputs)
+
+
+Manually set up a pipeline with SMOTE and a binned calibrator:
 
     import imbalanced as imb
 
@@ -25,10 +35,8 @@ Train and use a pipeline with SMOTE and re-calibration:
         imb.postprocessors.BinnedCalibrator()
     )
 
-    # Train the net and calibrator
     pipeline.train(dataset)
 
-    # Get some predictions
     predictions = pipeline.predict(inputs)
 
 Where `dataset` is your PyTorch dataset, and `net` is a net module object.
