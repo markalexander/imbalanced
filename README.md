@@ -21,7 +21,6 @@ Automatically choose a reasonable pipeline, train it, and predict:
     import imbalanced as imb
 
     dataset = None  # Your dataset
-    net = None  # Your PyTorch network module
 
     pipeline = imb.AutoPipeline(dataset)
     pipeline.train(dataset)
@@ -29,6 +28,8 @@ Automatically choose a reasonable pipeline, train it, and predict:
 
 
 Manually set up a pipeline with random subsampling and no calibration:
+
+    net = None  # Your PyTorch network module
 
     pipeline = imb.Pipeline(
         imb.preprocessors.RandomSubsampler(rate=0.5),
