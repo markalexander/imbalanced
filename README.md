@@ -18,25 +18,28 @@ Install the package with pip:
 
 Automatically choose a reasonable pipeline, train it, and predict:
 
-    import imbalanced as imb
+```python
+import imbalanced as imb
 
-    dataset = imb.datasets.SKLearnSyntheticRegression()  # Or your dataset
+dataset = imb.datasets.SKLearnSyntheticRegression()  # Or your dataset
 
-    pipeline = imb.AutoPipeline(dataset)
-    pipeline.train(dataset)
-    predictions = pipeline.predict(inputs)
-
+pipeline = imb.AutoPipeline(dataset)
+pipeline.train(dataset)
+predictions = pipeline.predict(inputs)
+```
 
 Manually set up a pipeline with random subsampling and no calibration:
 
-    net = None  # Your PyTorch network module
+```python
+net = None  # Your PyTorch network module
 
-    pipeline = imb.Pipeline(
-        imb.preprocessors.RandomSubsampler(rate=0.5),
-        net
-    )
-    pipeline.train(dataset)
-    predictions = pipeline.predict(inputs)
+pipeline = imb.Pipeline(
+    imb.preprocessors.RandomSubsampler(rate=0.5),
+    net
+)
+pipeline.train(dataset)
+predictions = pipeline.predict(inputs)
+```
 
 
 ## Documentation
