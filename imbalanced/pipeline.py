@@ -77,6 +77,7 @@ class Pipeline:
         """
         if not isinstance(preprocessors, list):
             preprocessors = [preprocessors]
+        self._preprocessors = []
         for p in preprocessors:
             assert issubclass(type(p), Preprocessor)
             self._preprocessors.append(p)
@@ -145,6 +146,7 @@ class Pipeline:
         """
         if not isinstance(postprocessors, list):
             postprocessors = [postprocessors]
+        self._postprocessors = []
         for p in postprocessors:
             assert issubclass(type(p), Postprocessor)
             self._postprocessors.append(p)
