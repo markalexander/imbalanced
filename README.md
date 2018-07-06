@@ -61,7 +61,7 @@ APIs.
 
 ### **Why no Python 2.7 support?**
 
-Python 2.7 is due to be sunset at the start of 2020, with many important and
+Python 2.7 is due to be sunset at the end of 2019, with many important and
 widely-used libraries dropping support before then.  For this reason, I haven't
 put any extra effort into supporting it either.  Apologies if this affects you
 in a way you can't get around.  I would *guess* that the package is roughly
