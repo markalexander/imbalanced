@@ -20,7 +20,7 @@ Automatically choose a reasonable pipeline, train it, and predict:
 
     import imbalanced as imb
 
-    dataset = None  # Your dataset
+    dataset = imb.datasets.SKLearnSyntheticRegression()  # Or your dataset
 
     pipeline = imb.AutoPipeline(dataset)
     pipeline.train(dataset)
