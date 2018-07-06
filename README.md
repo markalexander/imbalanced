@@ -4,43 +4,45 @@
 Imbalanced learning tools and experimental framework for PyTorch.
 Big data friendly.
 
-**N.B. this is pre-alpha and not yet functioning software.**
+**This is pre-alpha software.**
 
 
 ## Getting started
 
 Python >= 3.5 is required.
 
-<!--Install the `imbalanced` package with pip:
+Install the package with pip:
 
-    pip install imbalanced
+    pip install git+https://github.com/markalexander/imbalanced.git#egg=imbalanced
 
 
-Automatically choose the best pipeline and train it:
+Automatically choose a reasonable pipeline, train it, and predict:
 
     import imbalanced as imb
 
-    pipeline = imb.AutoPipeline()
+    dataset = None  # Your dataset
+    net = None  # Your PyTorch network module
+
+    pipeline = imb.AutoPipeline(dataset)
     pipeline.train(dataset)
     predictions = pipeline.predict(inputs)
 
 
-Manually set up a pipeline with SMOTE and a binned calibrator:
-
-    import imbalanced as imb
+Manually set up a pipeline with random subsampling and no calibration:
 
     pipeline = imb.Pipeline(
-        imb.preprocessors.SMOTE(),
-        imb.net,
-        imb.postprocessors.BinnedCalibrator()
+        imb.preprocessors.RandomSubsampler(rate=0.5),
+        net
     )
-
     pipeline.train(dataset)
-
     predictions = pipeline.predict(inputs)
 
-Where `dataset` is your PyTorch dataset, and `net` is a net module object.
--->
+
+## Documentation
+
+The code is generally self-documenting.  Web documentation will be generated
+for the first full release.
+
 
 ## FAQ
 

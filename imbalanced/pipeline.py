@@ -8,7 +8,7 @@ import torch
 from torch.nn import Module
 from typing import List, Union, Optional
 from .datasets import Dataset
-from .preprocessors import Preprocessor
+from .preprocessors import Preprocessor, RandomSubsampler
 from .postprocessors import Postprocessor
 from .learner import LearningAlgorithm
 
@@ -206,3 +206,41 @@ class Pipeline:
 
         """
         return self.predict(inputs)
+
+
+class AutoPipeline(Pipeline):
+    """Automatically configured imbalanced data pipeline.
+
+    Chooses reasonable defaults, based on the dataset given.
+    """
+
+    def __init__(self, dataset: Dataset) -> None:
+        # todo: add dataset analysis for choosing
+
+        # Pre-processor(s)
+        preprocessors = RandomSubsampler(rate=0.5)
+
+        # Net
+        in_dim = dataset[0][0].size()[0]
+        out_dim = 1
+        hidden_dim = 100
+        net = torch.nn.Sequential(
+            torch.nn.Linear(in_dim, hidden_dim),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_dim, out_dim),
+        )
+
+        # Learning algorithm
+        learner = LearningAlgorithm(
+            torch.nn.MSELoss(),
+            torch.optim.Adam(
+                net.parameters(),
+                lr=0.1
+            ),
+            10
+        )
+
+        # Post-processor(s)
+        postprocessors = None
+
+        super().__init__(preprocessors, net, learner, postprocessors)
