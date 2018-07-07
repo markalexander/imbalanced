@@ -17,7 +17,7 @@ Install the package with pip:
     pip install git+https://github.com/markalexander/imbalanced.git#egg=imbalanced
 
 
-Automatically choose a reasonable pipeline, train it, and predict:
+Automatically choose a reasonable pipeline, train it, and test:
 
 ```python
 import imbalanced as imb
