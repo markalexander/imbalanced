@@ -209,6 +209,18 @@ class Pipeline:
         """
         return self.predict(inputs)
 
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(preprocessors=%s, net=%s, learner=%s, postrocessors=%s)>' %\
+               (self.__class__.__name__, repr(self.preprocessors),
+                repr(self.net), repr(self.learner), repr(self.postprocessors))
+
 
 class AutoPipeline(Pipeline):
     """Automatically configured imbalanced data pipeline.

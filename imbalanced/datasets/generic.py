@@ -63,6 +63,17 @@ class Dataset(TorchDataset):
         """
         pass
 
+    @abstractmethod
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        pass
+
 
 class SimpleDataset(Dataset):
     """Simple dataset from common tensor-like objects.
@@ -113,6 +124,18 @@ class SimpleDataset(Dataset):
         """
         return len(self._inputs)
 
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(inputs=%s, targets=%s)>' % (self.__class__.__name__,
+                                                repr(self._inputs),
+                                                repr(self._targets))
+
 
 class DatasetWrapper(Dataset):
     """Base class for datasets that result from wrapping another Dataset object.
@@ -135,7 +158,6 @@ class DatasetWrapper(Dataset):
         self._lock_dataset = True
         if isinstance(lock_dataset, bool):
             self._lock_dataset = lock_dataset
-
 
     @property
     def dataset(self) -> Dataset:
@@ -185,6 +207,17 @@ class DatasetWrapper(Dataset):
 
         """
         pass
+
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(dataset=%s)>' % (self.__class__.__name__,
+                                     repr(self.dataset))
 
 
 class PartitionedDataset(DatasetWrapper):
@@ -267,6 +300,17 @@ class PartitionedDataset(DatasetWrapper):
             'Invalid partition specified'
         self._active_partition_idx = self._partition_names.index(partition)
 
+
+    @property
+    def partitions(self) -> Dict[str, int]:
+        """Get the partitions in original dict format.
+
+        Returns:
+            The dictionary of partitions.
+        """
+        return {name: self._partition_sizes[i]
+                for i, name in enumerate(self._partition_names)}
+
     @property
     def train(self) -> 'PartitionedDataset':
         """Shortcut to get the 'train' partition."""
@@ -308,6 +352,18 @@ class PartitionedDataset(DatasetWrapper):
 
         """
         return self._partition_sizes[self._active_partition_idx]
+
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(dataset=%s, partitions=%s)>' % (self.__class__.__name__,
+                                                    repr(self.dataset),
+                                                    repr(self.partitions))
 
 
 class ConcatenatedDataset(Dataset):
@@ -368,6 +424,17 @@ class ConcatenatedDataset(Dataset):
 
         """
         return self._cumulative_sizes[-1]
+
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(datasets=%s)>' % (self.__class__.__name__,
+                                      repr(self.datasets))
 
 
 class ResampledDataset(DatasetWrapper):
@@ -470,3 +537,15 @@ class ResampledDataset(DatasetWrapper):
 
         """
         return len(self._samples)
+
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(dataset=%s, samples=%s)>' % (self.__class__.__name__,
+                                                 repr(self.dataset),
+                                                 repr(self.samples))

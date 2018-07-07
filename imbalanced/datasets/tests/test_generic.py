@@ -53,6 +53,13 @@ class TestSimpleDataset:
                 np.ones((6, 5))
             )
 
+    def test_repr(self) -> None:
+        """Test the canonical string representation."""
+        # d = self.make_random()
+        # r = repr(d)
+        # assert r.startswith('<' + d.__class__.__name__)
+        # todo
+
     @staticmethod
     def make_random(size: Optional[int] = None) -> Tuple[SimpleDataset,
                                                          np.ndarray,
@@ -87,6 +94,11 @@ class TestDatasetWrapper:
         wrapper = self.make_random(10, lock_dataset=False)
         wrapper.dataset = TestSimpleDataset.make_random()[0]
 
+    def test_repr(self) -> None:
+        """Test the canonical string representation."""
+        # todo
+        pass
+
     @staticmethod
     def make_random(size: Optional[int] = None,
                     *args, **kwargs) -> DatasetWrapper:
@@ -106,6 +118,7 @@ class TestDatasetWrapper:
         class Wrapper(DatasetWrapper):
             def __init__(self, *args, **kwargs) -> None:
                 super().__init__(*args, **kwargs)
+
         return Wrapper(TestSimpleDataset.make_random(size)[0], *args, **kwargs)
 
 
@@ -223,6 +236,11 @@ class TestPartitionedDataset:
         with pytest.raises(IndexError):
             _ = dataset[2]
 
+    def test_repr(self) -> None:
+        """Test the canonical string representation."""
+        # todo
+        pass
+
     @staticmethod
     def make_random(size: Optional[int] = None,
                     partitions: Optional[Dict[str, Union[int, float]]] = None)\
@@ -258,6 +276,11 @@ class TestConcatenatedDataset:
             #     assert dataset_rows_are_equal(row, concat[total_len + j - 1])
         # Overall length match
         assert len(concat) == total_len
+
+    def test_repr(self) -> None:
+        """Test the canonical string representation."""
+        # todo
+        pass
 
     @staticmethod
     def make_random() -> Tuple[ConcatenatedDataset, List[SimpleDataset]]:
@@ -309,6 +332,11 @@ class TestResampledDataset:
         # Contains negative indices
         with pytest.raises(AssertionError):
             self.make_random(10, np.array([-1, 2, 1], dtype=np.int))
+
+    def test_repr(self) -> None:
+        """Test the canonical string representation."""
+        # todo
+        pass
 
     @staticmethod
     def make_random(size: Optional[int] = None,

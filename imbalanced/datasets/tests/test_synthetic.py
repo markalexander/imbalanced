@@ -11,6 +11,11 @@ class TestSKLearnSyntheticClassification:
         dataset = SKLearnSyntheticClassification(n_samples=20)
         assert len(dataset) == 20
 
+    def test_repr(self) -> None:
+        """Test the canonical string representation."""
+        # todo
+        pass
+
 
 class TestSKLearnSyntheticRegression:
     """Tests for the SKLearnSyntheticRegression class."""
@@ -18,3 +23,8 @@ class TestSKLearnSyntheticRegression:
     def test_general(self) -> None:
         dataset = SKLearnSyntheticRegression(n_samples=20)
         assert len(dataset) == 20
+
+    def test_repr(self) -> None:
+        """Test the canonical string representation."""
+        # todo
+        pass

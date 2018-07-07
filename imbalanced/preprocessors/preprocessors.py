@@ -24,6 +24,17 @@ class Preprocessor(ABC):
         """
         pass
 
+    @abstractmethod
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        pass
+
 
 class Resampler(Preprocessor):
     """Resampler base class."""
@@ -51,6 +62,17 @@ class Resampler(Preprocessor):
         """
         pass
 
+    @abstractmethod
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        pass
+
 
 class RandomSubsampler(Resampler):
     """Purely random subsampler.
@@ -74,3 +96,13 @@ class RandomSubsampler(Resampler):
         target_len = int(round(self.rate * original_len))
         samples = np.random.randint(0, original_len, target_len)
         return ResampledDataset(dataset, samples)
+
+    def __repr__(self) -> str:
+        """Get the canonical string representation for an instance of the
+        object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(rate=%s)>' % (self.__class__.__name__, self.rate)

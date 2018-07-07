@@ -95,3 +95,14 @@ class LearningAlgorithm:
             ('The `patience` argument must be an integer. '
              'Received `{}` instead.'.format(type(patience)))
         self._patience = patience
+
+    def __repr__(self) -> str:
+        """Get the canonical string representation of an instance of the object.
+
+        Returns:
+            The canonical string representation.
+
+        """
+        return '<%s(criterion=%s, optimizer=%s)>' % (self.__class__.__name__,
+                                                     repr(self.criterion),
+                                                     repr(self.optimizer))
