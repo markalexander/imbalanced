@@ -226,8 +226,11 @@ class PartitionedDataset(DatasetWrapper):
     Allows for e.g. partitioning a given dataset into train/val/test splits.
     """
 
-    def __init__(self, dataset: Dataset,
-                 partitions: Optional[Dict[str, Union[int, float]]] = None) -> None:
+    def __init__(
+        self,
+        dataset: Dataset,
+        partitions: Optional[Dict[str, Union[int, float]]] = None
+    ) -> None:
         """Create a PartitionedDataset object.
 
         :param dataset:     the dataset to be partitioned
@@ -299,7 +302,6 @@ class PartitionedDataset(DatasetWrapper):
         assert partition in self._partition_names,\
             'Invalid partition specified'
         self._active_partition_idx = self._partition_names.index(partition)
-
 
     @property
     def partitions(self) -> Dict[str, int]:

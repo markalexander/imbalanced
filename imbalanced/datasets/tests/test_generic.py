@@ -116,8 +116,8 @@ class TestDatasetWrapper:
 
         """
         class Wrapper(DatasetWrapper):
-            def __init__(self, *args, **kwargs) -> None:
-                super().__init__(*args, **kwargs)
+            def __init__(self, *args_, **kwargs_) -> None:
+                super().__init__(*args_, **kwargs_)
 
         return Wrapper(TestSimpleDataset.make_random(size)[0], *args, **kwargs)
 
@@ -185,6 +185,7 @@ class TestPartitionedDataset:
         """Test whether invalid partition structures are rejected."""
         # Not a dict
         with pytest.raises(AssertionError):
+            # noinspection PyTypeChecker
             self.make_random(10, ['a', 'b', 'c'])
         # All zero-sized partitions
         with pytest.raises(AssertionError):
@@ -322,6 +323,7 @@ class TestResampledDataset:
         """Test whether invalid input is rejected."""
         # Not an ndarray
         with pytest.raises(AssertionError):
+            # noinspection PyTypeChecker
             self.make_random(samples=[1, 2])
         # Invalid shape
         with pytest.raises(AssertionError):

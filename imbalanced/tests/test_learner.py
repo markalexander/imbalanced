@@ -6,11 +6,13 @@ from torch.nn.modules.loss import _Loss
 from ..learner import LearningAlgorithm
 
 
+# noinspection PyAbstractClass,PyMissingConstructor
 class DummyOptimizer(Optimizer):
     def __init__(self) -> None:
         pass
 
 
+# noinspection PyAbstractClass,PyMissingConstructor
 class DummyCriterion(_Loss):
     def __init__(self) -> None:
         pass
@@ -22,6 +24,8 @@ class TestLearningAlgorithm:
         criterion = DummyCriterion()
         optimizer = DummyOptimizer()
         with pytest.raises(AssertionError):
+            # noinspection PyTypeChecker
             LearningAlgorithm(1, optimizer)
         with pytest.raises(AssertionError):
+            # noinspection PyTypeChecker
             LearningAlgorithm(criterion, 1)
