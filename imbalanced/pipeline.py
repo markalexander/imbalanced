@@ -217,9 +217,10 @@ class Pipeline:
             The canonical string representation.
 
         """
-        return '<%s(preprocessors=%s, net=%s, learner=%s, postrocessors=%s)>' %\
-               (self.__class__.__name__, repr(self.preprocessors),
-                repr(self.net), repr(self.learner), repr(self.postprocessors))
+        return '<%s(preprocessors=%s, net=%s, learner=%s, postprocessors=%s)>' \
+               % (self.__class__.__name__, repr(self.preprocessors),
+                   repr(self.net), repr(self.learner),
+                   repr(self.postprocessors))
 
 
 class AutoPipeline(Pipeline):
