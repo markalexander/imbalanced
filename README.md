@@ -4,7 +4,8 @@
 Imbalanced learning tools and experimental framework for PyTorch.
 Big data friendly.
 
-**This is pre-alpha software.  Features and the exposed API are likely to change.**
+**This is pre-alpha software.  Features and the exposed API are likely to
+change.**
 
 
 ## Getting started
@@ -21,24 +22,27 @@ Automatically choose a reasonable pipeline, train it, and predict:
 ```python
 import imbalanced as imb
 
-dataset = imb.datasets.SKLearnSyntheticRegression()  # Or your dataset
+# Pick a dataset
+dataset = imb.datasets.SKLearnSyntheticRegression()
 
+# Partition it into train/val/test
+dataset = dataset.partitioned()
+
+# Train and test a pipeline
 pipeline = imb.AutoPipeline(dataset)
-pipeline.train(dataset)
-predictions = pipeline.predict(inputs)
+pipeline.train(dataset.train)
+predictions = pipeline.predict(dataset.test)
 ```
 
 Manually set up a pipeline with random subsampling and no calibration:
 
 ```python
-net = None  # Your PyTorch network module
-
 pipeline = imb.Pipeline(
     imb.preprocessors.RandomSubsampler(rate=0.5),
-    net
+    imb.nets.ExampleMLP()  # Or any PyTorch net module
 )
-pipeline.train(dataset)
-predictions = pipeline.predict(inputs)
+pipeline.train(dataset.train)
+predictions = pipeline.predict(dataset.train)
 ```
 
 
