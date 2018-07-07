@@ -151,11 +151,13 @@ class Pipeline:
             assert issubclass(type(p), Postprocessor)
             self._postprocessors.append(p)
 
-    def train(self, dataset: Dataset) -> None:
+    def train(self, train_dataset: Dataset,
+              val_dataset: Optional[Dataset] = None) -> None:
         """Train the pipeline, including the network and the post-processors.
 
         Args:
-            dataset: The dataset to use for training.
+            train_dataset: The dataset to use for training.
+            val_dataset:   The dataset to use for validation.
 
         Returns:
             None
@@ -163,19 +165,24 @@ class Pipeline:
         """
 
         # Validation
-        assert isinstance(dataset, Dataset),\
-            'Dataset argument must be an instance of Dataset (or a subclass)'
+        assert isinstance(train_dataset, Dataset),\
+            'Training dataset argument must be an instance of' \
+            'Dataset (or a subclass)'
+        if val_dataset is not None:
+            assert isinstance(val_dataset, Dataset),\
+                'Validation dataset argument must be an instance of' \
+                'Dataset (or a subclass)'
 
         # Pre-process the data
         for preprocessor in self.preprocessors:
-            dataset = preprocessor.process(dataset)
+            dataset = preprocessor.process(train_dataset)
 
         # Train the net
         # todo
 
         # Train the post-processors
         for postprocessor in self.postprocessors:
-            postprocessor.train(dataset, self.net(dataset))
+            postprocessor.train(train_dataset, self.net(train_dataset))
 
     def predict(self, inputs: torch.Tensor) -> torch.Tensor:
         """Return the end-to-end prediction(s) for the given input(s).

@@ -30,7 +30,7 @@ dataset = dataset.partitioned()
 
 # Train and test a pipeline
 pipeline = imb.AutoPipeline(dataset)
-pipeline.train(dataset.train)
+pipeline.train(dataset.train, dataset.val)
 predictions = pipeline.predict(dataset.test)
 ```
 
