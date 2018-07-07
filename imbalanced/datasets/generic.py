@@ -502,7 +502,7 @@ class ResampledDataset(DatasetWrapper):
         """Set the sampled indices of the original dataset.
 
         Args:
-            sampled_indices: The desired sample indices.
+            samples: The desired sample indices.
 
         """
         # First make sure it's a numpy array
