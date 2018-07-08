@@ -127,16 +127,15 @@ class SKLearnSyntheticClassification(SimpleDataset):
         inputs, targets = make_classification(**self._args)
         super().__init__(inputs, targets)
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        args = ', '.join(['%s=%s' % item for item in self._args.items()])
-        return '<%s(%s)>' % (self.__class__.__name__, args)
+        return self._args
 
 
 class SKLearnSyntheticRegression(SimpleDataset):
@@ -219,13 +218,12 @@ class SKLearnSyntheticRegression(SimpleDataset):
         inputs, targets = make_regression(**self._args)
         super().__init__(inputs, targets)
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        args = ', '.join(['%s=%s' % item for item in self._args.items()])
-        return '<%s(%s)>' % (self.__class__.__name__, args)
+        return self._args

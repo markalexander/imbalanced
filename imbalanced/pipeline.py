@@ -4,6 +4,7 @@
 This file contains the basic definition for an imbalanced data 'pipeline'.
 """
 
+from collections import OrderedDict
 import torch
 from torch.nn import Module
 from typing import List, Union, Optional
@@ -11,9 +12,10 @@ from .datasets import Dataset
 from .preprocessors import Preprocessor, RandomSubsampler
 from .postprocessors import Postprocessor
 from .learner import LearningAlgorithm
+from .misc import CanonicalDictMixin
 
 
-class Pipeline:
+class Pipeline(CanonicalDictMixin):
     """Imbalanced data pipeline.
 
     Defines an approach to the imbalanced data predictive modeling task.
@@ -216,18 +218,20 @@ class Pipeline:
         """
         return self.predict(inputs)
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(preprocessors=%s, net=%s, learner=%s, postprocessors=%s)>' \
-               % (self.__class__.__name__, repr(self.preprocessors),
-                   repr(self.net), repr(self.learner),
-                   repr(self.postprocessors))
+        return self._cdict_from_args([
+            ('preprocessors', self.preprocessors),
+            ('net', self.net),
+            ('learner', self.learner),
+            ('postprocessors', self.postprocessors)
+        ])
 
 
 class AutoPipeline(Pipeline):

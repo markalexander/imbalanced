@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from collections import OrderedDict
+from .misc import CanonicalDictMixin
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
 
-class LearningAlgorithm:
+class LearningAlgorithm(CanonicalDictMixin):
     """Defines (the key elements of) a learning algorithm."""
 
     def __init__(self, criterion: _Loss,
@@ -96,13 +98,15 @@ class LearningAlgorithm:
              'Received `{}` instead.'.format(type(patience)))
         self._patience = patience
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation of an instance of the object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(criterion=%s, optimizer=%s)>' % (self.__class__.__name__,
-                                                     repr(self.criterion),
-                                                     repr(self.optimizer))
+        return self._cdict_from_args([
+            ('criterion', self.criterion),
+            ('optimizer', self.optimizer)
+        ])

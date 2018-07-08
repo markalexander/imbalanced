@@ -5,11 +5,13 @@ This file contains class definitions for the various types of pre-processor.
 """
 
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 import numpy as np
 from ..datasets import Dataset, ResampledDataset
+from ..misc import CanonicalDictMixin
 
 
-class Preprocessor(ABC):
+class Preprocessor(ABC, CanonicalDictMixin):
     """Pre-processor base class."""
 
     @abstractmethod
@@ -21,17 +23,6 @@ class Preprocessor(ABC):
 
         Returns:
             The processed dataset.
-        """
-        pass
-
-    @abstractmethod
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
-
-        Returns:
-            The canonical string representation.
-
         """
         pass
 
@@ -62,17 +53,6 @@ class Resampler(Preprocessor):
         """
         pass
 
-    @abstractmethod
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
-
-        Returns:
-            The canonical string representation.
-
-        """
-        pass
-
 
 class RandomSubsampler(Resampler):
     """Purely random subsampler.
@@ -97,12 +77,14 @@ class RandomSubsampler(Resampler):
         samples = np.random.randint(0, original_len, target_len)
         return ResampledDataset(dataset, samples)
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(rate=%s)>' % (self.__class__.__name__, self.rate)
+        return self._cdict_from_args([
+            ('rate', self.rate)
+        ])

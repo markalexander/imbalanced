@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
 from abc import abstractmethod
+from collections import OrderedDict
 from typing import Dict, Tuple, List, Union, Any, Optional
 import numpy as np
 import torch
 from torch.utils.data import Dataset as TorchDataset, DataLoader
+from ..misc import CanonicalDictMixin
 
 
-class Dataset(TorchDataset):
+class Dataset(TorchDataset, CanonicalDictMixin):
     """Base class for all datasets."""
 
     def loader(self, *args, **kwargs) -> DataLoader:
@@ -63,13 +65,13 @@ class Dataset(TorchDataset):
         """
         pass
 
+    @property
     @abstractmethod
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
         pass
@@ -124,17 +126,18 @@ class SimpleDataset(Dataset):
         """
         return len(self._inputs)
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(inputs=%s, targets=%s)>' % (self.__class__.__name__,
-                                                repr(self._inputs),
-                                                repr(self._targets))
+        return self._cdict_from_args([
+            ('inputs', self._inputs),
+            ('targets', self._inputs)
+        ])
 
 
 class DatasetWrapper(Dataset):
@@ -208,16 +211,17 @@ class DatasetWrapper(Dataset):
         """
         pass
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(dataset=%s)>' % (self.__class__.__name__,
-                                     repr(self.dataset))
+        return self._cdict_from_args([
+            ('dataset', self.dataset)
+        ])
 
 
 class PartitionedDataset(DatasetWrapper):
@@ -355,17 +359,18 @@ class PartitionedDataset(DatasetWrapper):
         """
         return self._partition_sizes[self._active_partition_idx]
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(dataset=%s, partitions=%s)>' % (self.__class__.__name__,
-                                                    repr(self.dataset),
-                                                    repr(self.partitions))
+        return self._cdict_from_args([
+            ('dataset', self.dataset),
+            ('partitions', self.partitions)
+        ])
 
 
 class ConcatenatedDataset(Dataset):
@@ -427,16 +432,17 @@ class ConcatenatedDataset(Dataset):
         """
         return self._cumulative_sizes[-1]
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(datasets=%s)>' % (self.__class__.__name__,
-                                      repr(self.datasets))
+        return self._cdict_from_args([
+            ('datasets', self.datasets)
+        ])
 
 
 class ResampledDataset(DatasetWrapper):
@@ -540,14 +546,15 @@ class ResampledDataset(DatasetWrapper):
         """
         return len(self._samples)
 
-    def __repr__(self) -> str:
-        """Get the canonical string representation for an instance of the
-        object.
+    @property
+    def cdict(self) -> OrderedDict:
+        """Get the canonical dict representation of the current object.
 
         Returns:
-            The canonical string representation.
+            The canonical dict representation.
 
         """
-        return '<%s(dataset=%s, samples=%s)>' % (self.__class__.__name__,
-                                                 repr(self.dataset),
-                                                 repr(self.samples))
+        return self._cdict_from_args([
+            ('dataset', self.dataset),
+            ('samples', self.samples)
+        ])
