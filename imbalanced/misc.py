@@ -21,8 +21,7 @@ class CanonicalDictMixin:
         """
         pass
 
-    def _cdict_from_args(self,
-                                  args: List[Tuple[str, Any]]) -> OrderedDict:
+    def _cdict_from_args(self, args: List[Tuple[str, Any]]) -> OrderedDict:
         """Construct a canonical (ordered) dictionary from a list of arg tuples.
 
         Essentially loops through and recursively expands other objects into

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from collections import OrderedDict
 from typing import Dict, Tuple, List, Union, Any, Optional
 import numpy as np
@@ -41,40 +41,6 @@ class Dataset(TorchDataset, CanonicalDictMixin):
 
         """
         return PartitionedDataset(self, *args, **kwargs)
-
-    @abstractmethod
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Get a data row by index.
-
-        Args:
-            idx: The index of the desired row.
-
-        Returns:
-            The desired row (input, target)
-
-        """
-        pass
-
-    @abstractmethod
-    def __len__(self) -> int:
-        """Get the total number of rows in the dataset.
-
-        Returns:
-            The number of rows.
-
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
-
-        Returns:
-            The canonical dict representation.
-
-        """
-        pass
 
 
 class SimpleDataset(Dataset):
@@ -148,11 +114,11 @@ class DatasetWrapper(Dataset):
         """Create a DatasetWrapper object.
 
         Args:
-            dataset:        The dataset to be wrapped.
+            dataset:      The dataset to be wrapped.
             lock_dataset: Whether the wrapped dataset can be updated after
-                            the wrapper object is constructed.  Typically set
-                            to True, since doing so is likely to break indexing
-                            used by the wrapper.
+                          the wrapper object is constructed.  Typically set
+                          to True, since doing so is likely to break indexing
+                          used by the wrapper.
         """
         # Init
         self._dataset = None
@@ -187,41 +153,6 @@ class DatasetWrapper(Dataset):
         assert isinstance(dataset, Dataset),\
             'Wrapped object must be an instance of Dataset (or a subclass).'
         self._dataset = dataset
-
-    @abstractmethod
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Get a data row by index.
-
-        Args:
-            idx: The index of the desired row.
-
-        Returns:
-            The desired row (input, target)
-
-        """
-        pass
-
-    @abstractmethod
-    def __len__(self) -> int:
-        """Get the total number of rows in the dataset.
-
-        Returns:
-            The number of rows.
-
-        """
-        pass
-
-    @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
-
-        Returns:
-            The canonical dict representation.
-
-        """
-        return self._cdict_from_args([
-            ('dataset', self.dataset)
-        ])
 
 
 class PartitionedDataset(DatasetWrapper):
