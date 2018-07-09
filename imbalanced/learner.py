@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
-from .misc import CanonicalDictMixin
+from typing import List, Tuple, Any
+from .meta import CanonicalDictMixin
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
@@ -99,14 +99,15 @@ class LearningAlgorithm(CanonicalDictMixin):
         self._patience = patience
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
-        return self._cdict_from_args([
+        return [
             ('criterion', self.criterion),
             ('optimizer', self.optimizer)
-        ])
+        ]

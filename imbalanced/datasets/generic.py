@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from abc import abstractmethod, ABC
-from collections import OrderedDict
 from typing import Dict, Tuple, List, Union, Any, Optional
 import numpy as np
 import torch
 from torch.utils.data import Dataset as TorchDataset, DataLoader
-from ..misc import CanonicalDictMixin
+from ..meta import CanonicalDictMixin
 
 
 class Dataset(TorchDataset, CanonicalDictMixin):
@@ -93,17 +91,18 @@ class SimpleDataset(Dataset):
         return len(self._inputs)
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
-        return self._cdict_from_args([
+        return [
             ('inputs', self._inputs),
             ('targets', self._inputs)
-        ])
+        ]
 
 
 class DatasetWrapper(Dataset):
@@ -291,17 +290,18 @@ class PartitionedDataset(DatasetWrapper):
         return self._partition_sizes[self._active_partition_idx]
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
-        return self._cdict_from_args([
+        return [
             ('dataset', self.dataset),
             ('partitions', self.partitions)
-        ])
+        ]
 
 
 class ConcatenatedDataset(Dataset):
@@ -364,16 +364,17 @@ class ConcatenatedDataset(Dataset):
         return self._cumulative_sizes[-1]
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
-        return self._cdict_from_args([
+        return [
             ('datasets', self.datasets)
-        ])
+        ]
 
 
 class ResampledDataset(DatasetWrapper):
@@ -478,14 +479,15 @@ class ResampledDataset(DatasetWrapper):
         return len(self._samples)
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
-        return self._cdict_from_args([
+        return [
             ('dataset', self.dataset),
             ('samples', self.samples)
-        ])
+        ]

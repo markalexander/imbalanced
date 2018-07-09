@@ -4,15 +4,14 @@
 This file contains the basic definition for an imbalanced data 'pipeline'.
 """
 
-from collections import OrderedDict
 import torch
 from torch.nn import Module
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Tuple, Any
 from .datasets import Dataset
 from .preprocessors import Preprocessor, RandomSubsampler
 from .postprocessors import Postprocessor
 from .learner import LearningAlgorithm
-from .misc import CanonicalDictMixin
+from .meta import CanonicalDictMixin
 
 
 class Pipeline(CanonicalDictMixin):
@@ -219,19 +218,20 @@ class Pipeline(CanonicalDictMixin):
         return self.predict(inputs)
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
-        return self._cdict_from_args([
+        return [
             ('preprocessors', self.preprocessors),
             ('net', self.net),
             ('learner', self.learner),
             ('postprocessors', self.postprocessors)
-        ])
+        ]
 
 
 class AutoPipeline(Pipeline):

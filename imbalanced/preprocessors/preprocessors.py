@@ -5,10 +5,10 @@ This file contains class definitions for the various types of pre-processor.
 """
 
 from abc import ABC, abstractmethod
-from collections import OrderedDict
+from typing import List, Tuple, Any
 import numpy as np
 from ..datasets import Dataset, ResampledDataset
-from ..misc import CanonicalDictMixin
+from ..meta import CanonicalDictMixin
 
 
 class Preprocessor(ABC, CanonicalDictMixin):
@@ -78,13 +78,14 @@ class RandomSubsampler(Resampler):
         return ResampledDataset(dataset, samples)
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
-        return self._cdict_from_args([
+        return [
             ('rate', self.rate)
-        ])
+        ]

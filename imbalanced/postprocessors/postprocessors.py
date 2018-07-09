@@ -5,7 +5,7 @@ This file contains class definitions for the various post-processing methods.
 """
 
 from abc import ABC, abstractmethod
-from ..misc import CanonicalDictMixin
+from ..meta import CanonicalDictMixin
 
 
 class Postprocessor(ABC, CanonicalDictMixin):

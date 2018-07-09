@@ -3,7 +3,7 @@
 from sklearn.datasets import make_classification, make_regression
 import numpy as np
 from collections import OrderedDict
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Tuple, Any
 from .generic import SimpleDataset
 
 
@@ -107,7 +107,7 @@ class SKLearnSyntheticClassification(SimpleDataset):
                                   generator is the RandomState instance used by
                                   np.random.
         """
-        self._args = OrderedDict([
+        self._args = [
             ('n_samples', n_samples),
             ('n_features', n_features),
             ('n_informative', n_informative),
@@ -123,16 +123,17 @@ class SKLearnSyntheticClassification(SimpleDataset):
             ('scale', scale),
             ('shuffle', shuffle),
             ('random_state', random_state)
-        ])
-        inputs, targets = make_classification(**self._args)
+        ]
+        inputs, targets = make_classification(**OrderedDict(self._args))
         super().__init__(inputs, targets)
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
         return self._args
@@ -203,7 +204,7 @@ class SKLearnSyntheticRegression(SimpleDataset):
                             None, the random number generator is the RandomState
                             instance used by np.random.
         """
-        self._args = OrderedDict([
+        self._args = [
             ('n_samples', n_samples),
             ('n_features', n_features),
             ('n_informative', n_informative),
@@ -214,16 +215,17 @@ class SKLearnSyntheticRegression(SimpleDataset):
             ('noise', noise),
             ('shuffle', shuffle),
             ('random_state', random_state)
-        ])
-        inputs, targets = make_regression(**self._args)
+        ]
+        inputs, targets = make_regression(**OrderedDict(self._args))
         super().__init__(inputs, targets)
 
     @property
-    def cdict(self) -> OrderedDict:
-        """Get the canonical dict representation of the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
-            The canonical dict representation.
+            The arguments, as a list of tuples (arg_name, arg_value).
 
         """
         return self._args
