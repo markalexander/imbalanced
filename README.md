@@ -42,7 +42,7 @@ pipeline = imb.Pipeline(
     imb.nets.ExampleMLP()  # Or any PyTorch net module
 )
 pipeline.train(dataset.train)
-predictions = pipeline.predict(dataset.train)
+predictions = pipeline.predict(dataset.test)
 ```
 
 
@@ -54,7 +54,7 @@ for the first full release.
 
 ## FAQ
 
-### **Why not the existing `imbalanced-learn` package?**
+**Why not the existing `imbalanced-learn` package?**
 
 This package focuses on neural networks (particularly deep architectures) and
 aims to be a big-data-friendly implementation in terms of storage and memory
@@ -63,7 +63,8 @@ use.
 There is also slightly more flexibility for specialized methods in the exposed
 APIs.
 
-### **Why no Python 2.7 support?**
+
+**Why no Python 2.7 support?**
 
 Python 2.7 is due to be sunset at the end of 2019, with many important and
 widely-used libraries dropping support before then.  For this reason, I haven't
