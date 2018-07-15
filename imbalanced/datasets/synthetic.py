@@ -129,8 +129,8 @@ class SKLearnSyntheticClassification(SimpleDataset):
 
     @property
     def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments which define the
-        current object.
+        """Get the canonical (ordered) list of arguments ('c-args') which define
+        the current object.
 
         Returns:
             The arguments, as a list of tuples (arg_name, arg_value).
@@ -221,8 +221,8 @@ class SKLearnSyntheticRegression(SimpleDataset):
 
     @property
     def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments which define the
-        current object.
+        """Get the canonical (ordered) list of arguments ('c-args') which define
+        the current object.
 
         Returns:
             The arguments, as a list of tuples (arg_name, arg_value).
