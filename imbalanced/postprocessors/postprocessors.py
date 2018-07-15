@@ -5,10 +5,10 @@ This file contains class definitions for the various post-processing methods.
 """
 
 from abc import ABC, abstractmethod
-from ..meta import CanonicalDictMixin
+from ..meta import CanonicalArgsMixin
 
 
-class Postprocessor(ABC, CanonicalDictMixin):
+class Postprocessor(ABC, CanonicalArgsMixin):
 
     @abstractmethod
     def train(self, original_dataset, predictions):

@@ -11,10 +11,10 @@ from .datasets import Dataset
 from .preprocessors import Preprocessor, RandomSubsampler
 from .postprocessors import Postprocessor
 from .learner import LearningAlgorithm
-from .meta import CanonicalDictMixin
+from .meta import CanonicalArgsMixin
 
 
-class Pipeline(CanonicalDictMixin):
+class Pipeline(CanonicalArgsMixin):
     """Imbalanced data pipeline.
 
     Defines an approach to the imbalanced data predictive modeling task.
@@ -218,7 +218,7 @@ class Pipeline(CanonicalDictMixin):
         return self.predict(inputs)
 
     @property
-    def args(self) -> List[Tuple[str, Any]]:
+    def c_args(self) -> List[Tuple[str, Any]]:
         """Get the canonical (ordered) list of arguments which define the
         current object.
 

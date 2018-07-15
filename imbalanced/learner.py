@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from typing import List, Tuple, Any
-from .meta import CanonicalDictMixin
+from .meta import CanonicalArgsMixin
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
 
-class LearningAlgorithm(CanonicalDictMixin):
+class LearningAlgorithm(CanonicalArgsMixin):
     """Defines (the key elements of) a learning algorithm."""
 
     def __init__(self, criterion: _Loss,
@@ -99,7 +99,7 @@ class LearningAlgorithm(CanonicalDictMixin):
         self._patience = patience
 
     @property
-    def args(self) -> List[Tuple[str, Any]]:
+    def c_args(self) -> List[Tuple[str, Any]]:
         """Get the canonical (ordered) list of arguments which define the
         current object.
 

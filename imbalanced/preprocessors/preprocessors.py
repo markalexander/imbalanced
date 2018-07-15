@@ -8,10 +8,10 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Any
 import numpy as np
 from ..datasets import Dataset, ResampledDataset
-from ..meta import CanonicalDictMixin
+from ..meta import CanonicalArgsMixin
 
 
-class Preprocessor(ABC, CanonicalDictMixin):
+class Preprocessor(ABC, CanonicalArgsMixin):
     """Pre-processor base class."""
 
     @abstractmethod
@@ -78,7 +78,7 @@ class RandomSubsampler(Resampler):
         return ResampledDataset(dataset, samples)
 
     @property
-    def args(self) -> List[Tuple[str, Any]]:
+    def c_args(self) -> List[Tuple[str, Any]]:
         """Get the canonical (ordered) list of arguments which define the
         current object.
 

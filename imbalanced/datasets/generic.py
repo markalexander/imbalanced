@@ -4,10 +4,10 @@ from typing import Dict, Tuple, List, Union, Any, Optional
 import numpy as np
 import torch
 from torch.utils.data import Dataset as TorchDataset, DataLoader
-from ..meta import CanonicalDictMixin
+from ..meta import CanonicalArgsMixin
 
 
-class Dataset(TorchDataset, CanonicalDictMixin):
+class Dataset(TorchDataset, CanonicalArgsMixin):
     """Base class for all datasets."""
 
     def loader(self, *args, **kwargs) -> DataLoader:
@@ -91,7 +91,7 @@ class SimpleDataset(Dataset):
         return len(self._inputs)
 
     @property
-    def args(self) -> List[Tuple[str, Any]]:
+    def c_args(self) -> List[Tuple[str, Any]]:
         """Get the canonical (ordered) list of arguments which define the
         current object.
 
@@ -290,7 +290,7 @@ class PartitionedDataset(DatasetWrapper):
         return self._partition_sizes[self._active_partition_idx]
 
     @property
-    def args(self) -> List[Tuple[str, Any]]:
+    def c_args(self) -> List[Tuple[str, Any]]:
         """Get the canonical (ordered) list of arguments which define the
         current object.
 
@@ -364,7 +364,7 @@ class ConcatenatedDataset(Dataset):
         return self._cumulative_sizes[-1]
 
     @property
-    def args(self) -> List[Tuple[str, Any]]:
+    def c_args(self) -> List[Tuple[str, Any]]:
         """Get the canonical (ordered) list of arguments which define the
         current object.
 
@@ -479,7 +479,7 @@ class ResampledDataset(DatasetWrapper):
         return len(self._samples)
 
     @property
-    def args(self) -> List[Tuple[str, Any]]:
+    def c_args(self) -> List[Tuple[str, Any]]:
         """Get the canonical (ordered) list of arguments which define the
         current object.
 
