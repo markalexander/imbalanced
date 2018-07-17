@@ -56,12 +56,17 @@ for the first full release.
 
 **Why not the existing `imbalanced-learn` package?**
 
-This package focuses on neural networks (particularly deep architectures) and
-aims to be a big-data-friendly implementation in terms of storage and memory
-use.
+This package differs from `imbalanced-learn` in a number of ways:
 
-There is also slightly more flexibility for specialized methods in the exposed
-APIs.
+  - PyTorch integration.
+  - A focus on neural networks (particularly deep architectures).
+  - Big-data-friendly implementation in terms of:
+    - Storage and memory considerations.
+    - Use of CUDA not only for the net operations, but also for e.g. faster
+      pre- and post-processing, where appropriate.
+  - Slightly more flexibility for specialized methods in the exposed APIs.
+  
+If you don't need these, then you might want to use `imbalanced-learn` instead.
 
 
 **Why no Python 2.7 support?**
