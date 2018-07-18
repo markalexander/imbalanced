@@ -24,11 +24,10 @@ def dataset_rows_are_equal(row1: Tuple[Tensor, ...],
     return all(row1[i] == row2[i] for i in range(len(row1)))
 
 
-def make_random_dataset(
-        size: int = 100,
-        input_dim: int = 5,
-        target_dim: int = 5
-) -> Tuple[TensorDataset, np.ndarray, np.ndarray]:
+def make_random_dataset(size: int = 100,
+                        input_dim: int = 5,
+                        target_dim: int = 5) -> Tuple[TensorDataset,
+                                                      np.ndarray, np.ndarray]:
     """Create a random TensorDataset object.
 
     Args:
