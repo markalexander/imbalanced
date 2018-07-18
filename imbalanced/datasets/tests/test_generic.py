@@ -59,11 +59,6 @@ class TestDatasetWrapper:
         wrapper = self.make_random(10, lock_dataset=False)
         wrapper.dataset = make_random_dataset()[0]
 
-    def test_repr(self) -> None:
-        """Test the canonical string representation."""
-        # todo
-        pass
-
     @staticmethod
     def make_random(size: Optional[int] = None,
                     *args, **kwargs) -> DatasetWrapper:
@@ -177,11 +172,6 @@ class TestPartitionedDataset:
         with pytest.raises(AttributeError):
             assert len(dataset.c) > 0
 
-    def test_repr(self) -> None:
-        """Test the canonical string representation."""
-        # todo
-        pass
-
     @staticmethod
     def make_random(size: int = 100,
                     partitions: Optional[Dict[str, Union[int, float]]] = None)\
@@ -241,11 +231,6 @@ class TestResampledDataset:
         # Contains negative indices
         with pytest.raises(AssertionError):
             self.make_random(10, np.array([-1, 2, 1], dtype=np.int))
-
-    def test_repr(self) -> None:
-        """Test the canonical string representation."""
-        # todo
-        pass
 
     @staticmethod
     def make_random(size: int = 100,
