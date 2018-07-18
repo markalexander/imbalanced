@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
+from types import FunctionType
 from .meta import CanonicalArgsMixin
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -11,8 +12,8 @@ class LearningAlgorithm(CanonicalArgsMixin):
 
     def __init__(self, criterion: _Loss,
                  optimizer: Optimizer,
-                 initializer,
-                 patience: int = 5) -> None:
+                 initializer: Optional[FunctionType] = None,
+                 patience: Optional[int] = 5) -> None:
         """Create a LearningAlgorithm object.
 
         Args:
@@ -25,13 +26,16 @@ class LearningAlgorithm(CanonicalArgsMixin):
         """
         # Init
         self._criterion = None
-        self._initializer = None
         self._optimizer = None
+        self._initializer = None
         self._patience = None
         # Set
         self.criterion = criterion
-        self.initializer = initializer
         self.optimizer = optimizer
+        if initializer is None:
+            def initializer(*args, **kwargs):
+                pass
+        self.initializer = initializer
         self.patience = patience
 
     @property
@@ -59,28 +63,6 @@ class LearningAlgorithm(CanonicalArgsMixin):
         self._criterion = criterion
 
     @property
-    def initializer(self) -> function:
-        """Get the initializer.
-
-        Returns:
-            The initializer.
-        """
-        return self._initializer
-
-    @initializer.setter
-    def initializer(self, initializer: function) -> None:
-        """Set the initializer.
-
-        Args:
-            initializer: The initializer to be set
-
-        """
-        assert isinstance(initializer, function),\
-            ('The `initializer` argument must be a function handle '
-             'Received `{}` instead.'.format(type(initializer)))
-        self._initializer = initializer
-
-    @property
     def optimizer(self) -> Optimizer:
         """Get the optimizer.
 
@@ -102,6 +84,28 @@ class LearningAlgorithm(CanonicalArgsMixin):
              '`torch.optim.optimizer.Optimizer`. '
              'Received `{}` instead.'.format(type(optimizer)))
         self._optimizer = optimizer
+
+    @property
+    def initializer(self) -> FunctionType:
+        """Get the initializer.
+
+        Returns:
+            The initializer.
+        """
+        return self._initializer
+
+    @initializer.setter
+    def initializer(self, initializer: FunctionType) -> None:
+        """Set the initializer.
+
+        Args:
+            initializer: The initializer to be set
+
+        """
+        assert callable(initializer),\
+            ('The `initializer` argument must be a function handle '
+             'Received `{}` instead.'.format(type(initializer)))
+        self._initializer = initializer
 
     @property
     def patience(self) -> int:
