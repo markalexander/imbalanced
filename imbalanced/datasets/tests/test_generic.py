@@ -11,8 +11,16 @@ from ..generic import DatasetWrapper, PartitionedDataset, ResampledDataset
 
 def dataset_rows_are_equal(row1: Tuple[Tensor, ...],
                            row2: Tuple[Tensor, ...]) -> bool:
-    """Utility function for comparing rows of form (inputs, outputs),
-    as returned by __getitem__ on our datasets."""
+    """Utility function for comparing rows of form (tensor1, tensor2, ...),
+    e.g. as returned by __getitem__ on a TensorDataset.
+
+    Args:
+        row1: The first row.
+        row2: The second row.
+
+    Returns:
+        Whether the rows are equal or not.
+    """
     return all(row1[i] == row2[i] for i in range(len(row1)))
 
 
