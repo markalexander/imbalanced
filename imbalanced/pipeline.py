@@ -259,32 +259,56 @@ class AutoPipeline(Pipeline):
     """
 
     def __init__(self, dataset: Dataset) -> None:
-        # todo: add dataset analysis for choosing
+        self.dataset = dataset
+        super().__init__(self.choose_preprocessors(), self.choose_net(),
+                         self.choose_learner(), self.choose_postprocessors())
 
-        # Pre-processor(s)
-        preprocessors = RandomSubsampler(rate=0.5)
+    def choose_preprocessors(self) -> List[Preprocessor]:
+        """Get (choose) a set of pre-processors.
 
-        # Net
-        in_dim = dataset[0][0].size()[0]
+        Returns:
+            The list of pre-processors.
+
+        """
+        return [RandomSubsampler(rate=0.5)]
+
+    def choose_net(self) -> Module:
+        """Get (choose) a network.
+
+        Returns:
+            The network object.
+
+        """
+        in_dim = self.dataset[0][0].size()[0]
         out_dim = 1
-        hidden_dim = 100
-        net = torch.nn.Sequential(
+        hidden_dim = 100  # todo: between input and output?
+        return torch.nn.Sequential(
             torch.nn.Linear(in_dim, hidden_dim),
             torch.nn.ReLU(),
             torch.nn.Linear(hidden_dim, out_dim),
         )
 
-        # Learning algorithm
-        learner = LearningAlgorithm(
+    def choose_learner(self) -> LearningAlgorithm:
+        """Get (choose) the learning algorithm.
+
+        Returns:
+            The learning algorithm.
+
+        """
+        return LearningAlgorithm(
             torch.nn.MSELoss(),
             torch.optim.Adam(
-                net.parameters(),
+                self.net.parameters(),
                 lr=0.1
             ),
             10
         )
 
-        # Post-processor(s)
-        postprocessors = None
+    def choose_postprocessors(self) -> List[Preprocessor]:
+        """Get (choose) a set of pre-processors.
 
-        super().__init__(preprocessors, net, learner, postprocessors)
+        Returns:
+            The list of pre-processors.
+
+        """
+        return []
