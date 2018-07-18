@@ -3,113 +3,15 @@
 from typing import Dict, Tuple, List, Union, Any, Optional
 import numpy as np
 import torch
-from torch.utils.data import Dataset as TorchDataset, DataLoader
-from ..meta import CanonicalArgsMixin
-
-
-class Dataset(TorchDataset, CanonicalArgsMixin):
-    """Base class for all datasets."""
-
-    def loader(self, *args, **kwargs) -> DataLoader:
-        """Get a torch data loader for this dataset.
-
-        Args:
-            *args:    Variable length argument list to be passed to the
-                      DataLoader constructor.
-            **kwargs: Arbitrary keyword arguments to be passed to the
-                      DataLoader constructor.
-
-        Returns:
-            The corresponding data loader.
-
-        """
-        return DataLoader(self, *args, **kwargs)
-
-    def partitioned(self, *args, **kwargs) -> 'PartitionedDataset':
-        """Get a partitioned version of the dataset.
-
-        Args:
-            *args:    Variable length argument list to be passed to the
-                      PartitionedDataset constructor.
-            **kwargs: Arbitrary keyword arguments to be passed to the
-                      PartitionedDataset constructor.
-
-        Returns:
-            The corresponding data loader.
-
-        """
-        return PartitionedDataset(self, *args, **kwargs)
-
-
-class SimpleDataset(Dataset):
-    """Simple dataset from common tensor-like objects.
-
-    Allows common tensor-like objects e.g. numpy arrays, list-of-lists to be
-    augmented with Dataset's interface and used in processes that require said
-    interface.
-    """
-
-    def __init__(self, inputs: Union[np.ndarray, List[Any]],
-                 targets: Union[np.ndarray, List[Any]]) -> None:
-        """Create a SimpleDataset object.
-
-        Args:
-            inputs:  The input features.
-            targets: The target values.
-        """
-        # Convert everything else to np.ndarray first
-        if not isinstance(inputs, np.ndarray):
-            inputs = np.array(inputs)
-        if not isinstance(targets, np.ndarray):
-            targets = np.array(targets)
-        # Validation
-        assert len(inputs) == len(targets),\
-            'Inputs and targets arrays must have same length'
-        # Create tensor objects
-        self._inputs = torch.from_numpy(inputs)
-        self._targets = torch.from_numpy(targets)
-
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Get a data row by index.
-
-        Args:
-            idx: The index of the desired row.
-
-        Returns:
-            The desired row (input, target)
-
-        """
-        return self._inputs[idx], self._targets[idx]
-
-    def __len__(self) -> int:
-        """Get the total number of rows in the dataset.
-
-        Returns:
-            The number of rows.
-
-        """
-        return len(self._inputs)
-
-    @property
-    def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments ('c-args') which define
-        the current object.
-
-        Returns:
-            The arguments, as a list of tuples (arg_name, arg_value).
-
-        """
-        return [
-            ('inputs', self._inputs),
-            ('targets', self._inputs)
-        ]
+from torch.utils.data import Dataset
 
 
 class DatasetWrapper(Dataset):
     """Base class for datasets that result from wrapping another Dataset object.
     """
 
-    def __init__(self, dataset: Dataset, lock_dataset: bool = True) -> None:
+    def __init__(self, dataset: Dataset,
+                 lock_dataset: bool = True) -> None:
         """Create a DatasetWrapper object.
 
         Args:
@@ -301,79 +203,6 @@ class PartitionedDataset(DatasetWrapper):
         return [
             ('dataset', self.dataset),
             ('partitions', self.partitions)
-        ]
-
-
-class ConcatenatedDataset(Dataset):
-    """Concatenated dataset class.
-
-    Can be used for general concatenation, but here is particularly useful for
-    joining an original dataset with some synthetically generated samples.
-    Using this form allows us to avoid caching the new concat'd dataset as a
-    whole new copy, rather we just cache the original (as we would anyway) and
-    the added data separately.
-
-    Note that the linear concatenation used here means that it may be desirable
-    to shuffle the resulting dataset elsewhere, e.g. in the data loader or
-    another shuffling wrapper.
-    """
-
-    def __init__(self, datasets: List[Dataset]) -> None:
-        super().__init__()
-        self._datasets = None
-        self._cumulative_sizes = None
-        self.datasets = datasets
-
-    @property
-    def datasets(self) -> List[Dataset]:
-        return self._datasets
-
-    @datasets.setter
-    def datasets(self, datasets: List[Dataset]) -> None:
-        assert len(datasets) > 0,\
-            'No datasets provided for concatenation'
-        self._datasets = datasets
-        self._cumulative_sizes = np.cumsum([len(d) for d in datasets])
-
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Get a data row by index.
-
-        Args:
-            idx: The index of the desired row.
-
-        Returns:
-            The desired row (input, target)
-
-        """
-        # Find which dataset we should be in
-        dataset_idx = np.searchsorted(self._cumulative_sizes, idx, side='right')
-        
-        # Get idx relative to start of that dataset
-        if dataset_idx > 0:
-            idx = idx - self._cumulative_sizes[dataset_idx - 1]
-        
-        return self.datasets[dataset_idx][idx]
-
-    def __len__(self):
-        """Get the total number of rows in the dataset.
-
-        Returns:
-            The number of rows.
-
-        """
-        return self._cumulative_sizes[-1]
-
-    @property
-    def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments ('c-args') which define
-        the current object.
-
-        Returns:
-            The arguments, as a list of tuples (arg_name, arg_value).
-
-        """
-        return [
-            ('datasets', self.datasets)
         ]
 
 

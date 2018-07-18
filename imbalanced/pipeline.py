@@ -7,7 +7,7 @@ This file contains the basic definition for an imbalanced data 'pipeline'.
 import torch
 from torch.nn import Module
 from typing import List, Union, Optional, Tuple, Any
-from .datasets import Dataset
+from torch.utils.data import Dataset
 from .preprocessors import Preprocessor, RandomSubsampler
 from .postprocessors import Postprocessor
 from .learner import LearningAlgorithm

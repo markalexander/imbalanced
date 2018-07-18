@@ -3,82 +3,41 @@
 import pytest
 import numpy as np
 import torch
-from typing import Tuple, Optional, Union, Dict, List
-from ..generic import Dataset, SimpleDataset, DatasetWrapper,\
-    PartitionedDataset, ConcatenatedDataset, ResampledDataset
+from torch import random, Tensor
+from torch.utils.data import TensorDataset
+from typing import Tuple, Optional, Union, Dict
+from ..generic import DatasetWrapper, PartitionedDataset, ResampledDataset
 
 
-def dataset_rows_are_equal(row1: Tuple[torch.Tensor, torch.Tensor],
-                           row2: Tuple[torch.Tensor, torch.Tensor]) -> bool:
+def dataset_rows_are_equal(row1: Tuple[Tensor, Tensor],
+                           row2: Tuple[Tensor, Tensor]) -> bool:
     """Utility function for comparing rows of form (inputs, outputs),
     as returned by __getitem__ on our datasets."""
     return (row1[0] == row2[0]).all() and (row1[1] == row2[1]).all()
 
 
-class TestSimpleDataset:
-    """Tests for the SimpleDataset class."""
+def make_random_dataset(
+        size: Optional[int] = None,
+        input_dim: int = 5,
+        target_dim: int = 5
+) -> Tuple[TensorDataset, np.ndarray, np.ndarray]:
+    """Create a random TensorDataset object.
 
-    def test_indexes_numpy_ndarray(self) -> None:
-        """Test whether the constructor accepts and correctly indexes numpy
-        ndarray objects.
-        """
-        dataset, inputs, targets = self.make_random()
-        # Check length is correct
-        assert len(dataset) == len(inputs) == len(targets)
-        # Check all rows are equal
-        for i in range(len(inputs)):
-            assert (dataset[i][0].numpy() == inputs[i]).all()
-            assert (dataset[i][1].numpy() == targets[i]).all()
+    Args:
+        size:       The desired number of rows
+        input_dim:  The desired input dimension.
+        target_dim: The desired target dimension.
 
-    def test_indexes_list_of_lists(self) -> None:
-        """Test whether the constructor accepts and correctly indexes
-        lists-of-lists.
-        """
-        _, inputs, targets = self.make_random()
-        dataset = SimpleDataset(list(inputs.tolist()), list(targets.tolist()))
-        # Check length is correct
-        assert len(dataset) == len(inputs) == len(targets)
-        # Check all rows are equal
-        for i in range(len(inputs)):
-            assert (dataset[i][0].numpy() == np.array(inputs[i])).all()
-            assert (dataset[i][1].numpy() == np.array(targets[i])).all()
+    Returns:
+        The random TensorDataset object.
 
-    def test_rejects_length_mismatch(self) -> None:
-        """Test whether the constructor raises an error for inputs and targets
-        with differing lengths.
-        """
-        with pytest.raises(AssertionError):
-            SimpleDataset(
-                np.ones((5, 5)),
-                np.ones((6, 5))
-            )
-
-    def test_repr(self) -> None:
-        """Test the canonical string representation."""
-        # d = self.make_random()
-        # r = repr(d)
-        # assert r.startswith('<' + d.__class__.__name__)
-        # todo
-
-    @staticmethod
-    def make_random(size: Optional[int] = None) -> Tuple[SimpleDataset,
-                                                         np.ndarray,
-                                                         np.ndarray]:
-        """Create a random SimpleDataset object.
-
-        Args:
-            size: The desired number of rows in the random dataset.
-
-        Returns:
-            The random SimpleDataset object.
-
-        """
-        if size is None:
-            size = 100
-        inputs = np.random.rand(size, 5)
-        targets = np.random.rand(size, 5)
-        dataset = SimpleDataset(inputs, targets)
-        return dataset, inputs, targets
+    """
+    if size is None:
+        size = 100
+    inputs = torch.rand(size, input_dim)
+    targets = torch.rand(size, target_dim)
+    dataset = TensorDataset(inputs, targets)
+    return dataset, inputs, targets
 
 
 class TestDatasetWrapper:
@@ -89,10 +48,10 @@ class TestDatasetWrapper:
         # Locking on by default
         wrapper = self.make_random(10)
         with pytest.raises(AssertionError):
-            wrapper.dataset = TestSimpleDataset.make_random()[0]
+            wrapper.dataset = make_random_dataset()[0]
         # Locking off
         wrapper = self.make_random(10, lock_dataset=False)
-        wrapper.dataset = TestSimpleDataset.make_random()[0]
+        wrapper.dataset = make_random_dataset()[0]
 
     def test_repr(self) -> None:
         """Test the canonical string representation."""
@@ -119,7 +78,7 @@ class TestDatasetWrapper:
             def __init__(self, *args_, **kwargs_) -> None:
                 super().__init__(*args_, **kwargs_)
 
-        return Wrapper(TestSimpleDataset.make_random(size)[0], *args, **kwargs)
+        return Wrapper(make_random_dataset(size)[0], *args, **kwargs)
 
 
 class TestPartitionedDataset:
@@ -258,42 +217,9 @@ class TestPartitionedDataset:
 
         """
         return PartitionedDataset(
-            TestSimpleDataset.make_random(size)[0],
+            make_random_dataset(size)[0],
             partitions
         )
-
-
-class TestConcatenatedDataset:
-    """Tests for the ConcatenatedDataset class."""
-
-    def test_indexing(self):
-        concat, datasets = self.make_random()
-        total_len = 0
-        for i, d in enumerate(datasets):
-            total_len += len(d)
-            # Check rows match up
-            # todo
-            # for j, row in enumerate(d):
-            #     assert dataset_rows_are_equal(row, concat[total_len + j - 1])
-        # Overall length match
-        assert len(concat) == total_len
-
-    def test_repr(self) -> None:
-        """Test the canonical string representation."""
-        # todo
-        pass
-
-    @staticmethod
-    def make_random() -> Tuple[ConcatenatedDataset, List[SimpleDataset]]:
-        """Create a random AugmentedDataset object.
-
-        Returns:
-            The random ConcatenatedDataset, and the datasets concatenated.
-
-        """
-        datasets = [TestSimpleDataset.make_random(100)[0] for _ in range(3)]
-        concat = ConcatenatedDataset(datasets)
-        return concat, datasets
 
 
 class TestResampledDataset:
@@ -343,7 +269,7 @@ class TestResampledDataset:
     @staticmethod
     def make_random(size: Optional[int] = None,
                     samples: Optional[np.ndarray] = None)\
-            -> Tuple[ResampledDataset, SimpleDataset]:
+            -> Tuple[ResampledDataset, TensorDataset]:
         """Create a random ResampledDataset object.
 
         Args:
@@ -354,6 +280,6 @@ class TestResampledDataset:
             The random ResampledDataset.
 
         """
-        original = TestSimpleDataset.make_random(size)[0]
+        original = make_random_dataset(size)[0]
         resampled = ResampledDataset(original, samples)
         return resampled, original

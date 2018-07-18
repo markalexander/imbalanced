@@ -7,7 +7,8 @@ This file contains class definitions for the various types of pre-processor.
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Any
 import numpy as np
-from ..datasets import Dataset, ResampledDataset
+from torch.utils.data import Dataset
+from ..datasets import ResampledDataset
 from ..meta import CanonicalArgsMixin
 
 

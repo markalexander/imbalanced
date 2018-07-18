@@ -9,7 +9,8 @@ dataset in its own right.
 """
 
 from abc import abstractmethod
-from .datasets import Dataset, ResampledDataset
+from torch.utils.data import Dataset
+from .datasets import ResampledDataset
 
 
 class Imbalancer:
