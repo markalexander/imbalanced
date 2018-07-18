@@ -108,19 +108,22 @@ class TestPartitionedDataset:
         defined as integer sizes.
         """
         dataset = self.make_random(10, {'a': 5, 'b': 3, 'c': 2})
-        assert len(dataset.a) + len(dataset.b) + len(dataset.c) == len(dataset)
-        # a
+        # Correct len
         assert len(dataset.a) == 5
-        assert dataset.a.start == 0
-        assert dataset.a.stop == 5
-        # b
         assert len(dataset.b) == 3
-        assert dataset.b.start == 6
-        assert dataset.b.stop == 9
-        # c
         assert len(dataset.c) == 2
-        assert dataset.c.start == 10
-        assert dataset.c.stop == 12
+        assert len(dataset.a) + len(dataset.b) + len(dataset.c) == len(dataset)
+        # No overlapping partitions
+        ps = [
+            (dataset.a.start, dataset.a.stop),
+            (dataset.b.start, dataset.b.stop),
+            (dataset.c.start, dataset.c.stop)
+        ]
+        for i in range(len(ps)):
+            for j in range(len(ps)):
+                if i != j:
+                    assert not ps[i][0] <= ps[j][0] <= ps[i][1]
+                    assert not ps[j][0] <= ps[i][0] <= ps[j][1]
 
     def test_fractional_partitions(self) -> None:
         """Test whether the constructor accepts and correctly indexes partitions
