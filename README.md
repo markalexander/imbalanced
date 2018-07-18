@@ -54,7 +54,7 @@ for the first full release.
 
 ## FAQ
 
-### Why not the existing `imbalanced-learn` package?**
+### Why not the existing `imbalanced-learn` package?
 
 This package differs from `imbalanced-learn` in a number of ways:
 
