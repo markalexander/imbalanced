@@ -9,15 +9,15 @@ from typing import Tuple, Optional, Union, Dict
 from ..generic import DatasetWrapper, PartitionedDataset, ResampledDataset
 
 
-def dataset_rows_are_equal(row1: Tuple[Tensor, Tensor],
-                           row2: Tuple[Tensor, Tensor]) -> bool:
+def dataset_rows_are_equal(row1: Tuple[Tensor, ...],
+                           row2: Tuple[Tensor, ...]) -> bool:
     """Utility function for comparing rows of form (inputs, outputs),
     as returned by __getitem__ on our datasets."""
-    return (row1[0] == row2[0]).all() and (row1[1] == row2[1]).all()
+    return all(row1[i] == row2[i] for i in range(len(row1)))
 
 
 def make_random_dataset(
-        size: Optional[int] = None,
+        size: int = 100,
         input_dim: int = 5,
         target_dim: int = 5
 ) -> Tuple[TensorDataset, np.ndarray, np.ndarray]:
@@ -32,8 +32,6 @@ def make_random_dataset(
         The random TensorDataset object.
 
     """
-    if size is None:
-        size = 100
     inputs = torch.rand(size, input_dim)
     targets = torch.rand(size, target_dim)
     dataset = TensorDataset(inputs, targets)
