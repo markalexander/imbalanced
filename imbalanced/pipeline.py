@@ -126,7 +126,7 @@ class Pipeline(CanonicalArgsMixin):
         self._learner = learner
 
     @property
-    def postprocessors(self) -> List[Preprocessor]:
+    def postprocessors(self) -> List[Postprocessor]:
         """Get the current post-processors.
 
         Returns:
@@ -304,7 +304,7 @@ class AutoPipeline(Pipeline):
             10
         )
 
-    def choose_postprocessors(self) -> List[Preprocessor]:
+    def choose_postprocessors(self) -> List[Postprocessor]:
         """Get (choose) a set of pre-processors.
 
         Returns:
