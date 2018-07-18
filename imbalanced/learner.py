@@ -10,22 +10,27 @@ class LearningAlgorithm(CanonicalArgsMixin):
     """Defines (the key elements of) a learning algorithm."""
 
     def __init__(self, criterion: _Loss,
-                 optimizer: Optimizer, patience: int = 5) -> None:
+                 optimizer: Optimizer,
+                 initializer,
+                 patience: int = 5) -> None:
         """Create a LearningAlgorithm object.
 
         Args:
-            criterion: The optimization criterion.
-            optimizer: The optimizer.
-            patience:  The number of epochs after which to terminate when no
-                       improvement is seen in validation set performance.
+            criterion:   The optimization criterion.
+            optimizer:   The optimizer.
+            initializer: The initializer.
+            patience:    The number of epochs after which to terminate when no
+                         improvement is seen in validation set performance.
 
         """
         # Init
         self._criterion = None
+        self._initializer = None
         self._optimizer = None
         self._patience = None
         # Set
         self.criterion = criterion
+        self.initializer = initializer
         self.optimizer = optimizer
         self.patience = patience
 
@@ -52,6 +57,28 @@ class LearningAlgorithm(CanonicalArgsMixin):
              '`torch.nn.modules.loss._Loss`. '
              'Received `{}` instead.'.format(type(criterion)))
         self._criterion = criterion
+
+    @property
+    def initializer(self) -> function:
+        """Get the initializer.
+
+        Returns:
+            The initializer.
+        """
+        return self._initializer
+
+    @initializer.setter
+    def initializer(self, initializer: function) -> None:
+        """Set the initializer.
+
+        Args:
+            initializer: The initializer to be set
+
+        """
+        assert isinstance(initializer, function),\
+            ('The `initializer` argument must be a function handle '
+             'Received `{}` instead.'.format(type(initializer)))
+        self._initializer = initializer
 
     @property
     def optimizer(self) -> Optimizer:

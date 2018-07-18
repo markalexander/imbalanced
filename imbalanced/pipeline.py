@@ -152,6 +152,24 @@ class Pipeline(CanonicalArgsMixin):
             assert issubclass(type(p), Postprocessor)
             self._postprocessors.append(p)
 
+    def init(self) -> None:
+        """(Re)-initialize the components in the pipeline.
+
+        Includes e.g. weight initialization of the net, resetting and trained
+        pre- or post- processors.
+
+        Returns:
+            None
+
+        """
+        # Pre- and post-processors
+        for p in self.postprocessors + self.postprocessors:
+            init_fn = getattr(p, 'init', None)
+            if callable(init_fn):
+                init_fn()
+        # Net
+        self.net.apply(self.learner.initializer)
+
     def train(self, train_dataset: Dataset,
               val_dataset: Optional[Dataset] = None) -> None:
         """Train the pipeline, including the network and the post-processors.
