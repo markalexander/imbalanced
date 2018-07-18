@@ -281,9 +281,11 @@ class AutoPipeline(Pipeline):
         """
         in_dim = self.dataset[0][0].size()[0]
         out_dim = 1
-        hidden_dim = 100  # todo: between input and output?
+        hidden_dim = int(round((in_dim + out_dim) / 2))
         return torch.nn.Sequential(
             torch.nn.Linear(in_dim, hidden_dim),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_dim, hidden_dim),
             torch.nn.ReLU(),
             torch.nn.Linear(hidden_dim, out_dim),
         )
