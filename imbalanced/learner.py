@@ -3,6 +3,8 @@
 from typing import List, Tuple, Any, Optional
 from types import FunctionType
 from .meta import CanonicalArgsMixin
+from torch.nn import Linear
+from torch.nn.init import xavier_uniform
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
@@ -19,7 +21,7 @@ class LearningAlgorithm(CanonicalArgsMixin):
         Args:
             criterion:   The optimization criterion.
             optimizer:   The optimizer.
-            initializer: The initializer.
+            initializer: The initializer.  Defaults to Xavier uniform.
             patience:    The number of epochs after which to terminate when no
                          improvement is seen in validation set performance.
 
@@ -142,3 +144,17 @@ class LearningAlgorithm(CanonicalArgsMixin):
             ('criterion', self.criterion),
             ('optimizer', self.optimizer)
         ]
+
+
+def xavier_uniform_init(m):
+    """Xavier weight initializer.
+
+    Args:
+        m: A PyTorch module, typically a layer.
+
+    Returns:
+        None
+    """
+    if isinstance(m, Linear):
+        xavier_uniform(m.weight)
+        m.bias.data.fill_(0.01)
