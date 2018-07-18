@@ -3,10 +3,11 @@
 import pytest
 import numpy as np
 import torch
-from torch import random, Tensor
+from torch import Tensor
 from torch.utils.data import TensorDataset
 from typing import Tuple, Optional, Union, Dict
-from ..generic import DatasetWrapper, PartitionedDataset, ResampledDataset
+from ..generic import DatasetWrapper, DatasetPartition, PartitionedDataset,\
+    ResampledDataset
 
 
 def dataset_rows_are_equal(row1: Tuple[Tensor, ...],
@@ -21,7 +22,7 @@ def dataset_rows_are_equal(row1: Tuple[Tensor, ...],
     Returns:
         Whether the rows are equal or not.
     """
-    return all(row1[i] == row2[i] for i in range(len(row1)))
+    return all((row1[i] == row2[i]).all() for i in range(len(row1)))
 
 
 def make_random_dataset(size: int = 100,
@@ -86,6 +87,19 @@ class TestDatasetWrapper:
         return Wrapper(make_random_dataset(size)[0], *args, **kwargs)
 
 
+class TestDatasetPartition:
+    """Tests for the DatasetPartition class."""
+
+    def test_indexes_correctly(self):
+        dataset = make_random_dataset(10)[0]
+        partition = DatasetPartition(dataset, 1, 5)
+        assert len(partition) == 4
+        assert dataset_rows_are_equal(partition[0], dataset[1])
+        assert dataset_rows_are_equal(partition[1], dataset[2])
+        assert dataset_rows_are_equal(partition[2], dataset[3])
+        assert dataset_rows_are_equal(partition[3], dataset[4])
+
+
 class TestPartitionedDataset:
     """Tests for the PartitionedDataset class."""
 
@@ -94,56 +108,37 @@ class TestPartitionedDataset:
         defined as integer sizes.
         """
         dataset = self.make_random(10, {'a': 5, 'b': 3, 'c': 2})
-        # Test partition lengths
-        dataset.set_active_partition('a')
-        assert len(dataset) == 5
-        dataset.set_active_partition('b')
-        assert len(dataset) == 3
-        dataset.set_active_partition('c')
-        assert len(dataset) == 2
+        assert len(dataset.a) + len(dataset.b) + len(dataset.c) == len(dataset)
+        # a
+        assert len(dataset.a) == 5
+        assert dataset.a.start == 0
+        assert dataset.a.stop == 5
+        # b
+        assert len(dataset.b) == 3
+        assert dataset.b.start == 6
+        assert dataset.b.stop == 9
+        # c
+        assert len(dataset.c) == 2
+        assert dataset.c.start == 10
+        assert dataset.c.stop == 12
 
     def test_fractional_partitions(self) -> None:
         """Test whether the constructor accepts and correctly indexes partitions
         defined as fractional sizes.
         """
-        dataset = self.make_random(100, {'a': 0.6, 'b': 0.2, 'c': 0.2})
-        dataset.set_active_partition('a')
-        assert len(dataset) == 60
-        dataset.set_active_partition('b')
-        assert len(dataset) == 20
-        dataset.set_active_partition('c')
-        assert len(dataset) == 20
+        dataset = self.make_random(100, {'a': 0.5, 'b': 0.3, 'c': 0.2})
+        assert len(dataset.a) == 50
+        assert len(dataset.b) == 30
+        assert len(dataset.c) == 20
 
-    def test_partition_shortcuts(self) -> None:
-        """Test the use of shortcut properties to train/val/test."""
-        dataset = self.make_random(10, {'train': 5, 'val': 3, 'test': 2})
-        dataset = dataset.train
-        assert dataset.active_partition == 'train'
-        dataset = dataset.val
-        assert dataset.active_partition == 'val'
-        dataset = dataset.test
-        assert dataset.active_partition == 'test'
-
-    def test_default_partitions(self) -> None:
-        """Test whether the default partitions are applied when none are
+    def test_default_partition_spec(self) -> None:
+        """Test whether the default partition spec is applied when none are
         specified.
         """
         dataset = self.make_random(100)
-        dataset.set_active_partition('train')
-        assert len(dataset) == 64
-        dataset.set_active_partition('val')
-        assert len(dataset) == 16
-        dataset.set_active_partition('test')
-        assert len(dataset) == 20
-
-    def test_default_active_partition(self) -> None:
-        """Test whether the default active partition is set appropriately."""
-        # Defaults to train, if it exists
-        dataset = self.make_random(10, {'train': 5, 'test': 5})
-        assert dataset.active_partition == 'train'
-        # Defaults to one of the given partitions otherwise
-        dataset = self.make_random(10, {'a': 5, 'b': 5})
-        assert dataset.active_partition in ['a', 'b']
+        assert len(dataset.train) == 64
+        assert len(dataset.val) == 16
+        assert len(dataset.test) == 20
 
     def test_rejects_invalid_partitions(self) -> None:
         """Test whether invalid partition structures are rejected."""
@@ -176,30 +171,8 @@ class TestPartitionedDataset:
     def test_rejects_invalid_partition_selection(self) -> None:
         """Test whether invalid partition selections are rejected."""
         dataset = self.make_random(10, {'a': 5, 'b': 5})
-        dataset.set_active_partition('a')
-        # Non-existent partition
-        with pytest.raises(AssertionError):
-            dataset.set_active_partition('does_not_exist')
-        # Check that didn't change the active partition
-        assert dataset.active_partition == 'a'
-
-    def test_rejects_invalid_indexing(self) -> None:
-        """Test whether invalid partition indexing is rejected."""
-        dataset = self.make_random(10, {'a': 5, 'b': 3, 'c': 2})
-        # Selecting data beyond the end of the whole dataset
-        dataset.set_active_partition('a')
-        with pytest.raises(IndexError):
-            _ = dataset[11]
-        # Selecting data beyond the end of the active partition
-        dataset.set_active_partition('a')
-        with pytest.raises(IndexError):
-            _ = dataset[5]
-        dataset.set_active_partition('b')
-        with pytest.raises(IndexError):
-            _ = dataset[3]
-        dataset.set_active_partition('c')
-        with pytest.raises(IndexError):
-            _ = dataset[2]
+        with pytest.raises(AttributeError):
+            assert len(dataset.c) > 0
 
     def test_repr(self) -> None:
         """Test the canonical string representation."""
@@ -207,7 +180,7 @@ class TestPartitionedDataset:
         pass
 
     @staticmethod
-    def make_random(size: Optional[int] = None,
+    def make_random(size: int = 100,
                     partitions: Optional[Dict[str, Union[int, float]]] = None)\
             -> PartitionedDataset:
         """Create a random PartitionedDataset object.
@@ -255,7 +228,7 @@ class TestResampledDataset:
         # Not an ndarray
         with pytest.raises(AssertionError):
             # noinspection PyTypeChecker
-            self.make_random(samples=[1, 2])
+            self.make_random(10, samples=[1, 2])
         # Invalid shape
         with pytest.raises(AssertionError):
             self.make_random(2, np.array([[1, 2], [3, 4]], dtype=np.int))
@@ -272,7 +245,7 @@ class TestResampledDataset:
         pass
 
     @staticmethod
-    def make_random(size: Optional[int] = None,
+    def make_random(size: int = 100,
                     samples: Optional[np.ndarray] = None)\
             -> Tuple[ResampledDataset, TensorDataset]:
         """Create a random ResampledDataset object.

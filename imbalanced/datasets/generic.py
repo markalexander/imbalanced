@@ -55,117 +55,58 @@ class DatasetWrapper(Dataset):
             'Wrapped object must be an instance of Dataset (or a subclass).'
         self._dataset = dataset
 
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Get a data row by index.
 
-class PartitionedDataset(DatasetWrapper):
-    """Partitioned dataset wrapper.
-
-    Allows for e.g. partitioning a given dataset into train/val/test splits.
-    """
-
-    def __init__(
-        self,
-        dataset: Dataset,
-        partitions: Optional[Dict[str, Union[int, float]]] = None
-    ) -> None:
-        """Create a PartitionedDataset object.
-
-        :param dataset:     the dataset to be partitioned
-        :type  dataset:     Dataset
-        :param partitions:  a dictionary specifying the partitions and their
-                            respective sizes, or None for a sensible default
-        :type  partitions:  dict or None
-        """
-
-        super().__init__(dataset)
-
-        # Reasonable defaults
-        # Equivalent to 80:20 split twice
-        if partitions is None:
-            partitions = {'train': 0.64, 'val': 0.16, 'test': 0.2}
-
-        # Basic validation
-        assert isinstance(partitions, dict),\
-            'Partition specification must be a dictionary object'
-        assert len(partitions) >= 2, \
-            'Partition specification must define at least two partitions'
-        assert min(partitions.values()) > 0, \
-            'Partitions must be non-empty'
-
-        # Convert fractional partitions to integer sizes
-        if sum(list(partitions.values())) <= 1:
-            partitions = {name: round(fraction * len(dataset))
-                          for name, fraction in partitions.items()}
-
-        # Further validation
-        for size in partitions.values():
-            assert size == int(size),\
-                'Partition sizes must be integer, or fractional and sum to <= 1'
-        assert sum(partitions.values()) == len(dataset),\
-            'Partition sizes must sum to dataset size'
-
-        # Cache useful properties
-        self._partition_names = list(partitions.keys())
-        self._partition_sizes = [int(partitions[name])
-                                 for name in self._partition_names]
-        self._partition_offsets = np.cumsum(self._partition_sizes)
-
-        # Set active partition
-        self._active_partition_idx = None
-        if 'train' in self._partition_names:
-            # Set train as default, if it's there
-            self.set_active_partition('train')
-        else:
-            # Just use the first partition
-            self.set_active_partition(self._partition_names[0])
-
-    @property
-    def active_partition(self) -> str:
-        """Get the currently active partition.
-
-        Returns:
-            The name of the active partition.
-
-        """
-        return self._partition_names[self._active_partition_idx]
-
-    def set_active_partition(self, partition: str) -> None:
-        """Set the active partition.
+        Default to passing off to the wrapped dataset.
 
         Args:
-            partition: The name of the desired partition.
-
-        """
-        assert partition in self._partition_names,\
-            'Invalid partition specified'
-        self._active_partition_idx = self._partition_names.index(partition)
-
-    @property
-    def partitions(self) -> Dict[str, int]:
-        """Get the partitions in original dict format.
+            idx: The index of the desired row.
 
         Returns:
-            The dictionary of partitions.
+            The desired row (input, target)
+
         """
-        return {name: self._partition_sizes[i]
-                for i, name in enumerate(self._partition_names)}
+        return self.__getitem__(idx)
 
-    @property
-    def train(self) -> 'PartitionedDataset':
-        """Shortcut to get the 'train' partition."""
-        self.set_active_partition('train')
-        return self
+    def __len__(self) -> int:
+        """Get the total number of rows in the dataset.
 
-    @property
-    def val(self) -> 'PartitionedDataset':
-        """Shortcut to get the 'val' partition."""
-        self.set_active_partition('val')
-        return self
+        Default to passing off to the wrapped dataset.
 
-    @property
-    def test(self) -> 'PartitionedDataset':
-        """Shortcut to get the 'test' partition."""
-        self.set_active_partition('test')
-        return self
+        Returns:
+            The number of rows.
+
+        """
+        return self.dataset.__len__()
+
+
+class DatasetPartition(DatasetWrapper):
+    """Single partition of a dataset."""
+
+    def __init__(self, dataset: Dataset, start: int, stop: int) -> None:
+        """Create a DatasetPartition object.
+
+        Indexing (for start and end values) is consistent with Python's slice().
+        I.e. counting starts at zero, start value is inclusive, and
+        stop value is non-inclusive.  So, for example, start = 1, stop = 4 would
+        include the 1st, 2nd, and 3rd rows of the wrapped dataset.
+
+        Args:
+            dataset: The dataset that this is a partition of.
+            start:   The start point of the partition.
+            stop:    The stop point of the partition.
+
+        Returns:
+            None
+
+        """
+        super().__init__(dataset)
+        assert isinstance(start, int), 'Partition start must be an integer.'
+        assert isinstance(stop, int), 'Partition end must be an integer.'
+        assert stop >= start, 'Partition stop must be >= start.'
+        self.start = start
+        self.stop = stop
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """Get a data row by index.
@@ -177,10 +118,10 @@ class PartitionedDataset(DatasetWrapper):
             The desired row (input, target)
 
         """
-        if idx >= self._partition_sizes[self._active_partition_idx]:
-            raise IndexError()
-        offset = self._partition_offsets[self._active_partition_idx - 1]
-        return self.dataset[offset + idx]
+        if 0 <= idx <= len(self):
+            return self.dataset[self.start + idx]
+        else:
+            raise IndexError('Index %s is outside the partition' % idx)
 
     def __len__(self) -> int:
         """Get the total number of rows in the dataset.
@@ -189,7 +130,87 @@ class PartitionedDataset(DatasetWrapper):
             The number of rows.
 
         """
-        return self._partition_sizes[self._active_partition_idx]
+        return self.stop - self.start
+
+
+class PartitionedDataset(DatasetWrapper):
+    """Partitioned dataset wrapper.
+
+    Allows for e.g. partitioning a given dataset into train/val/test splits.
+    """
+
+    def __init__(
+        self,
+        dataset: Dataset,
+        partition_spec: Optional[Dict[str, Union[int, float]]] = None
+    ) -> None:
+        """Create a PartitionedDataset object.
+
+        Partition a dataset into the given partitions.
+
+        Args:
+            dataset:        The dataset to be partitioned.
+            partition_spec: The partition specification.  A dictionary of partition
+                            names and sizes in the form
+                            {'partition1': size1, 'partition2': size2}
+
+        Returns:
+            None
+
+        """
+
+        super().__init__(dataset)
+
+        # Reasonable defaults
+        # Equivalent to 80:20 split twice
+        if partition_spec is None:
+            partition_spec = {'train': 0.64, 'val': 0.16, 'test': 0.2}
+
+        # Basic validation
+        assert isinstance(partition_spec, dict),\
+            'Partition specification must be a dictionary object'
+        assert len(partition_spec) >= 2, \
+            'Partition specification must define at least two partitions'
+        assert min(partition_spec.values()) > 0, \
+            'Partitions must be non-empty'
+
+        # Convert fractional partitions to integer sizes
+        if sum(list(partition_spec.values())) <= 1:
+            partition_spec = {name: round(fraction * len(dataset))
+                              for name, fraction in partition_spec.items()}
+
+        # Further validation
+        for size in partition_spec.values():
+            assert size == int(size),\
+                'Partition sizes must be integer, or fractional and sum to <= 1'
+        assert sum(partition_spec.values()) == len(dataset),\
+            'Partition sizes must sum to dataset size'
+
+        # Build partitions
+        partitions = {}
+        start = 0
+        for name in list(partition_spec.keys()):
+            stop = start + partition_spec[name]
+            partitions[name] = DatasetPartition(dataset, start, stop)
+            start = stop + 1
+        self.partitions = partitions
+
+    def __getattr__(self, name):
+        """Get the partition with the given name.
+
+        Allows for shortcuts like dataset.test
+
+        Args:
+            name: The name of the partition to get.
+
+        Returns:
+            The requested partition.
+
+        """
+        if name in self.partitions:
+            return self.partitions[name]
+        else:
+            raise AttributeError()
 
     @property
     def c_args(self) -> List[Tuple[str, Any]]:
