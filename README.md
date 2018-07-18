@@ -54,7 +54,7 @@ for the first full release.
 
 ## FAQ
 
-**Why not the existing `imbalanced-learn` package?**
+### Why not the existing `imbalanced-learn` package?**
 
 This package differs from `imbalanced-learn` in a number of ways:
 
@@ -69,7 +69,7 @@ This package differs from `imbalanced-learn` in a number of ways:
 If you don't need these, then you might want to use `imbalanced-learn` instead.
 
 
-**Why no Python 2.7 support?**
+### Why no Python 2.7 support?
 
 Python 2.7 is due to be sunset at the end of 2019, with many important and
 widely-used libraries dropping support before then.  For this reason, I haven't
