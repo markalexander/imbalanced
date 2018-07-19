@@ -196,18 +196,6 @@ class TestPartitionedDataset:
 class TestResampledDataset:
     """Tests for the ResampledDataset class."""
 
-    def test_masked_indexes_correctly(self) -> None:
-        """Test whether the masked indexing/length works correctly."""
-        samples = np.array([1, 2, 5, 7], dtype=np.int)
-        resampled, original = self.make_random(10, samples)
-        assert len(resampled) == 4
-        i_resampled = 0
-        for i_orig in range(len(original)):
-            if i_orig in samples:
-                assert dataset_rows_are_equal(original[i_orig],
-                                              resampled[i_resampled])
-                i_resampled += 1
-
     def test_all_rows_sampled_by_default(self) -> None:
         """Test whether the default behaviour (no provided samples) works
         correctly."""
@@ -215,22 +203,6 @@ class TestResampledDataset:
         assert len(resampled) == len(original)
         for i in range(len(original)):
             assert dataset_rows_are_equal(original[i], resampled[i])
-
-    def test_rejects_invalid_samples(self) -> None:
-        """Test whether invalid input is rejected."""
-        # Not an ndarray
-        with pytest.raises(AssertionError):
-            # noinspection PyTypeChecker
-            self.make_random(10, samples=[1, 2])
-        # Invalid shape
-        with pytest.raises(AssertionError):
-            self.make_random(2, np.array([[1, 2], [3, 4]], dtype=np.int))
-        # Contains indices beyond end of dataset
-        with pytest.raises(AssertionError):
-            self.make_random(10, np.array([1, 2, 11], dtype=np.int))
-        # Contains negative indices
-        with pytest.raises(AssertionError):
-            self.make_random(10, np.array([-1, 2, 1], dtype=np.int))
 
     @staticmethod
     def make_random(size: int = 100,

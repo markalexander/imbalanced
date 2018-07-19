@@ -3,7 +3,7 @@
 from typing import Dict, Tuple, List, Union, Any, Optional
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data.dataset import Dataset, Subset
 
 
 class DatasetWrapper(Dataset):
@@ -227,117 +227,23 @@ class PartitionedDataset(DatasetWrapper):
         ]
 
 
-class ResampledDataset(DatasetWrapper):
-    """Resampled dataset.
+class ResampledDataset(Subset):
+    """Resampled version of a wrapped dataset.
 
-    Represents a resampled version of a given dataset.
-
-    Wraps but does not copy the original dataset.  Instead stores only the
-    minimum representation of the *differences* between the original dataset
-    and the resampled one.
-
-    For simple resampling, a list containing the indices of those rows
-    which are 'active' in the resample is maintained.  Thus, rows from the
-    original dataset may be:
-
-         - Deleted from the resampled data, by removing their index from
-           the aforementioned active rows list.
-
-         - Re-introduced, by adding the removed index once more.
-
-         - Duplicated (as in simple over-sampling), by adding duplicates of
-           a row's index to the active list.
-
-    This form of row-index structure is considered appropriate due to the
-    typical sparsity pattern of resampled imbalanced data.
+    For now, this is juat a renaming of torch's Subset class, to better
+    represent what it does.
 
     Note that a combination of synthetic generation and simple sampling can be
-    achieved by using this wrapper on a ConcatenatedDataset consisting of the
+    achieved by using this wrapper on a ConcatDataset consisting of the
     original and the synthetically generated samples.  See the pre-processors
     module for more information.
+
+    todo: seamlessly incorporate synthetic sampling via the above
     """
 
     def __init__(self, dataset: Dataset,
-                 samples: Optional[np.ndarray] = None) -> None:
-        """Create a ResampledDataset object.
-
-        Args:
-            dataset: The original dataset being resampled.
-            samples: The indices of rows that have been resampled from the
-                     original dataset.  Duplicates allowed. If None is passed,
-                     all rows in the original dataset will be used.
-        """
-        super().__init__(dataset)
-        self._samples = None
-        if samples is not None:
-            self.samples = samples
-        else:
+                 indices: Optional[np.ndarray] = None) -> None:
+        if indices is None:
             # Default to entire dataset
-            self.samples = np.arange(len(self.dataset), dtype=np.int)
-
-    @property
-    def samples(self) -> np.ndarray:
-        """Get the sampled indices of the original dataset.
-
-        Returns:
-            A numpy array of the sampled indices.
-
-        """
-        return self._samples
-
-    @samples.setter
-    def samples(self, samples: np.ndarray) -> None:
-        """Set the sampled indices of the original dataset.
-
-        Args:
-            samples: The desired sample indices.
-
-        """
-        # First make sure it's a numpy array
-        assert isinstance(samples, np.ndarray),\
-            'Sample indices must be a numpy ndarray'
-        # Squash it
-        samples = samples.flatten()
-        # More checks
-        # todo: assert integer?
-        assert samples.min() >= 0,\
-            'Sample indices must be non-negative'
-        assert samples.max() < len(self.dataset),\
-            'Sample indices must be found in original dataset'
-        # Set it
-        self._samples = samples
-
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Get a data row by index.
-
-        Args:
-            idx: The index of the desired row.
-
-        Returns:
-            The desired row (input, target)
-
-        """
-        return self.dataset[self._samples[idx]]
-
-    def __len__(self) -> int:
-        """Get the total number of rows in the dataset.
-
-        Returns:
-            The number of rows.
-
-        """
-        return len(self._samples)
-
-    @property
-    def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments ('c-args') which define
-        the current object.
-
-        Returns:
-            The arguments, as a list of tuples (arg_name, arg_value).
-
-        """
-        return [
-            ('dataset', self.dataset),
-            ('samples', self.samples)
-        ]
+            indices = np.arange(len(dataset), dtype=np.int)
+        super().__init__(dataset, indices)
