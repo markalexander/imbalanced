@@ -102,7 +102,7 @@ def expand_repr(obj) -> Union[OrderedDict, List, Dict, str]:
         # Attempt to convert it to a dict representation
 
         # First, get some kind of canonical argument list
-        if isinstance(obj, CanonicalArgsMixin):
+        if hasattr(obj, 'c_args'):
             # Already defined by the object if implements our mixin
             c_args = obj.c_args
 
