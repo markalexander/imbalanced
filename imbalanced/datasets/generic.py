@@ -118,7 +118,7 @@ class DatasetPartition(DatasetWrapper):
             The desired row (input, target)
 
         """
-        if 0 <= idx <= len(self):
+        if 0 <= idx < len(self):
             return self.dataset[self.start + idx]
         else:
             raise IndexError('Index %s is outside the partition' % idx)
