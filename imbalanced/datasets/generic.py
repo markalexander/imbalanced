@@ -230,8 +230,9 @@ class PartitionedDataset(DatasetWrapper):
 class ResampledDataset(Subset):
     """Resampled version of a wrapped dataset.
 
-    For now, this is juat a renaming of torch's Subset class, to better
-    represent what it does.
+    For now, this is just a renaming of torch's Subset class--to better
+    represent what it is used for here--with the addition of defaulting to
+    a full sample of the underlying dataset.
 
     Note that a combination of synthetic generation and simple sampling can be
     achieved by using this wrapper on a ConcatDataset consisting of the
