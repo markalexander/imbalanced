@@ -67,7 +67,7 @@ class DatasetWrapper(Dataset):
             The desired row (input, target)
 
         """
-        return self.__getitem__(idx)
+        return self.dataset[idx]
 
     def __len__(self) -> int:
         """Get the total number of rows in the dataset.
