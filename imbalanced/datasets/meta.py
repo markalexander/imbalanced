@@ -7,7 +7,6 @@ class ImbalancedDatasetStats:
 
     def __init__(self, dataset):
         self.dataset = dataset
-
         targets = dataset.tensors[1].numpy()
         self.len = len(dataset)
         self.majority_count = len(np.where(targets == 0))
@@ -19,10 +18,13 @@ class ImbalancedDatasetStats:
         return len(self.dataset)
 
     def __repr__(self):
-        return 'Total count: {}, maj. count: {}, min. count: {}, maj ratio: {}, min. ratio: {}'.format(
-            self.len,
+        s = 'Total count: {}\n'.format(self.len)
+        s += '\tmaj. count: {}, min. count: {}\n'.format(
             self.majority_count,
             self.minority_count,
+        )
+        s += '\tmaj ratio: {}, min. ratio: {}\n'.format(
             self.majority_ratio,
             self.minority_ratio
         )
+        return s
