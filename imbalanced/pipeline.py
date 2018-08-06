@@ -4,12 +4,13 @@
 This file contains the basic definition for an imbalanced data 'pipeline'.
 """
 
+from abc import ABC, abstractmethod
 import torch
 from torch.nn import Module
+from torch.autograd import Variable
 from typing import List, Union, Optional, Tuple, Any
-from torch.utils.data import Dataset
-from .preprocessors import Preprocessor, RandomSubsampler
-from .postprocessors import Postprocessor
+from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.sampler import Sampler
 from .learner import LearningAlgorithm
 from .meta import CanonicalArgsMixin
 
@@ -20,68 +21,58 @@ class Pipeline(CanonicalArgsMixin):
     Defines an approach to the imbalanced data predictive modeling task.
     Essentially consists of defined processors for each intervention stage:
 
-        Pre-processors -> Net architecture -> Learning algo -> Post-processors
+        Pre-processors -> Net architecture -> Learning algo
     """
 
     def __init__(self,
-                 preprocessors: Optional[Union[List[Preprocessor],
-                                               Preprocessor]],
+                 samplers: Optional[Union[List[Sampler], Sampler]],
                  net: Module,
-                 learner: LearningAlgorithm,
-                 postprocessors: Optional[Union[List[Postprocessor],
-                                                Postprocessor]]) -> None:
+                 learner: LearningAlgorithm) -> None:
         """Create a pipeline object.
 
         Args:
-            preprocessors:  A (list of) pre-processor(s), which may be empty
-                            or None for no pre-processing.
+            samplers:  A (list of) re-sampler(s), which may be empty or None for
+                       no resampling.
             net:            A neural network.
             learner:        A learning algorithm specification.
-            postprocessors: A (list of) post-processor(s), which may be empty
-                            or None for no post-processing.
 
         """
         # Init
-        self._preprocessors = None
+        self._samplers = None
         self._net = None
         self._learner = None
         self._postprocessors = None
         # Set
-        if preprocessors is None:
-            preprocessors = []
-        self.preprocessors = preprocessors
+        if samplers is None:
+            samplers = []
+        self.samplers = samplers
         self.net = net
         self.learner = learner
-        if postprocessors is None:
-            postprocessors = []
-        self.postprocessors = postprocessors
 
     @property
-    def preprocessors(self) -> List[Preprocessor]:
+    def samplers(self) -> List[Sampler]:
         """Get the current pre-processor(s).
 
         Returns:
             The list of pre-processors.
 
         """
-        return self._preprocessors
+        return self._samplers
 
-    @preprocessors.setter
-    def preprocessors(self,
-                      preprocessors: Union[List[Preprocessor],
-                                           Preprocessor]) -> None:
+    @samplers.setter
+    def samplers(self, samplers: Union[List[Sampler], Sampler]) -> None:
         """Set the pre-processors.
 
         Args:
-            preprocessors: The preprocessor or list of preprocessors to set.
+            samplers: The preprocessor or list of samplers to set.
 
         """
-        if not isinstance(preprocessors, list):
-            preprocessors = [preprocessors]
-        self._preprocessors = []
-        for p in preprocessors:
-            assert issubclass(type(p), Preprocessor)
-            self._preprocessors.append(p)
+        if not isinstance(samplers, list):
+            samplers = [samplers]
+        self._samplers = []
+        for s in samplers:
+            assert issubclass(type(s), Sampler)
+            self._samplers.append(s)
 
     @property
     def net(self) -> Module:
@@ -125,33 +116,6 @@ class Pipeline(CanonicalArgsMixin):
         assert isinstance(learner, LearningAlgorithm)
         self._learner = learner
 
-    @property
-    def postprocessors(self) -> List[Postprocessor]:
-        """Get the current post-processors.
-
-        Returns:
-            The current post-processors.
-
-        """
-        return self._postprocessors
-
-    @postprocessors.setter
-    def postprocessors(self,
-                       postprocessors: Union[List[Postprocessor],
-                                             Postprocessor]) -> None:
-        """Set the post-processors.
-
-        Args:
-            postprocessors: The post-processors to be set.
-
-        """
-        if not isinstance(postprocessors, list):
-            postprocessors = [postprocessors]
-        self._postprocessors = []
-        for p in postprocessors:
-            assert issubclass(type(p), Postprocessor)
-            self._postprocessors.append(p)
-
     def init(self) -> None:
         """(Re)-initialize the components in the pipeline.
 
@@ -162,16 +126,14 @@ class Pipeline(CanonicalArgsMixin):
             None
 
         """
-        # Pre- and post-processors
-        for p in self.postprocessors + self.postprocessors:
-            init_fn = getattr(p, 'init', None)
-            if callable(init_fn):
-                init_fn()
-        # Net
         self.net.apply(self.learner.initializer)
 
-    def train(self, train_dataset: Dataset,
-              val_dataset: Optional[Dataset] = None) -> None:
+    def train(
+            self,
+            train_dataset: Dataset,
+            val_dataset: Optional[Dataset] = None,
+            logger: Optional['PipelineTrainingLogger'] = None
+    ) -> None:
         """Train the pipeline, including the network and the post-processors.
 
         Args:
@@ -191,17 +153,65 @@ class Pipeline(CanonicalArgsMixin):
             assert isinstance(val_dataset, Dataset),\
                 'Validation dataset argument must be an instance of' \
                 'Dataset (or a subclass)'
+        if logger is not None:
+            assert isinstance(logger, PipelineTrainingLogger),\
+                'Logger must implement PipelineTrainingLogger'
+        else:
+            logger = NullPipelineTrainingLogger()
 
         # Pre-process the data
-        for preprocessor in self.preprocessors:
-            dataset = preprocessor.process(train_dataset)
+        # for preprocessor in self.samplers:
+        #     dataset = preprocessor.process(train_dataset)
+
+        # Dataloaders
+        params = {'batch_size': 100, 'shuffle': True, 'num_workers': 4}
+        train_dataloader = DataLoader(train_dataset, **params)
+        val_dataloader = DataLoader(val_dataset, **params)
 
         # Train the net
-        # todo
+        for epoch in range(10):
+
+            # Loop through training batches
+            for inputs, targets in train_dataloader:
+
+                # Reset gradients
+                self.net.zero_grad()
+
+                # Variables
+                inputs = Variable(inputs)
+                targets = Variable(targets)
+
+                # Forward pass
+                outputs = self.net(inputs)
+                loss = self.learner.criterion(outputs, targets)
+
+                # Backward pass/update
+                loss.backward()
+                self.learner.optimizer.step()
+
+                # Trigger end of batch event
+                logger.on_net_training_batch_complete(self)
+
+            # Trigger end of epoch
+            logger.on_net_training_epoch_complete(self)
+
+            # print(
+            #     'Epoch: {} ## Train MSE: {}, Val MSE:'.format(
+            #         epoch + 1,
+            #         float(loss.data),
+            #         # float(val_crit)
+            #     )
+            # )
+
+        # Trigger end of net training
+        logger.on_net_training_complete(self)
 
         # Train the post-processors
-        for postprocessor in self.postprocessors:
-            postprocessor.train(train_dataset, self.net(train_dataset))
+        # for postprocessor in self.postprocessors:
+        #     postprocessor.train(train_dataset, self.net(train_dataset))
+
+        # Trigger end of pipeline training
+        logger.on_pipeline_training_complete(self)
 
     def predict(self, inputs: torch.Tensor) -> torch.Tensor:
         """Return the end-to-end prediction(s) for the given input(s).
@@ -245,10 +255,9 @@ class Pipeline(CanonicalArgsMixin):
 
         """
         return [
-            ('preprocessors', self.preprocessors),
+            ('samplers', self.samplers),
             ('net', self.net),
-            ('learner', self.learner),
-            ('postprocessors', self.postprocessors)
+            ('learner', self.learner)
         ]
 
 
@@ -260,10 +269,10 @@ class AutoPipeline(Pipeline):
 
     def __init__(self, dataset: Dataset) -> None:
         self.dataset = dataset
-        super().__init__(self.choose_preprocessors(), self.choose_net(),
+        super().__init__(self.choose_samplers(), self.choose_net(),
                          self.choose_learner(), self.choose_postprocessors())
 
-    def choose_preprocessors(self) -> List[Preprocessor]:
+    def choose_samplers(self) -> List[Sampler]:
         """Get (choose) a set of pre-processors.
 
         Returns:
@@ -314,3 +323,46 @@ class AutoPipeline(Pipeline):
 
         """
         return []
+
+
+class PipelineTrainingLogger(ABC):
+    """Interface for training session logger objects.
+
+    Defines key triggers for events during the training process.
+    """
+
+    @abstractmethod
+    def on_net_training_batch_complete(self, pipeline, pre_calc=None):
+        pass
+
+    @abstractmethod
+    def on_net_training_epoch_complete(self, pipeline, pre_calc=None):
+        pass
+
+    @abstractmethod
+    def on_net_training_complete(self, pipeline, pre_calc=None):
+        pass
+
+    @abstractmethod
+    def on_pipeline_training_complete(self, pipeline, pre_calc=None):
+        pass
+
+
+class NullPipelineTrainingLogger(PipelineTrainingLogger):
+    """Default 'null' logger for pipeline training.
+
+    Discards all events.  Easier than doing many if-blocks in the training
+    procedure.
+    """
+
+    def on_net_training_batch_complete(self, pipeline, pre_calc=None):
+        pass
+
+    def on_net_training_epoch_complete(self, pipeline, pre_calc=None):
+        pass
+
+    def on_net_training_complete(self, pipeline, pre_calc=None):
+        pass
+
+    def on_pipeline_training_complete(self, pipeline, pre_calc=None):
+        pass
