@@ -11,6 +11,7 @@ from torch.autograd import Variable
 from typing import List, Union, Optional, Tuple, Any
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.sampler import Sampler
+from .samplers import RandomClassResampler
 from .learner import LearningAlgorithm
 from .meta import CanonicalArgsMixin
 
@@ -269,17 +270,17 @@ class AutoPipeline(Pipeline):
 
     def __init__(self, dataset: Dataset) -> None:
         self.dataset = dataset
-        super().__init__(self.choose_samplers(), self.choose_net(),
-                         self.choose_learner(), self.choose_postprocessors())
+        super().__init__(self.choose_samplers(dataset), self.choose_net(),
+                         self.choose_learner())
 
-    def choose_samplers(self) -> List[Sampler]:
+    def choose_samplers(self, dataset) -> List[Sampler]:
         """Get (choose) a set of pre-processors.
 
         Returns:
             The list of pre-processors.
 
         """
-        return [RandomSubsampler(rate=0.5)]
+        return [RandomClassResampler(dataset, 0, 0.5)]
 
     def choose_net(self) -> Module:
         """Get (choose) a network.
@@ -314,15 +315,6 @@ class AutoPipeline(Pipeline):
             ),
             10
         )
-
-    def choose_postprocessors(self) -> List[Postprocessor]:
-        """Get (choose) a set of pre-processors.
-
-        Returns:
-            The list of pre-processors.
-
-        """
-        return []
 
 
 class PipelineTrainingLogger(ABC):
