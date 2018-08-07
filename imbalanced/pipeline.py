@@ -227,10 +227,7 @@ class Pipeline(CanonicalArgsMixin):
             The tensor of predictions.
 
         """
-        output = self.net(inputs)
-        for postprocessor in self.postprocessors:
-            output = postprocessor.process(output)
-        return output
+        return self.net(inputs)
 
     def __call__(self, inputs: torch.Tensor) -> torch.Tensor:
         """Shortcut for the predict() method.

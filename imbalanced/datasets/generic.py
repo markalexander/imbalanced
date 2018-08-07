@@ -108,6 +108,18 @@ class DatasetPartition(DatasetWrapper):
         self.start = start
         self.stop = stop
 
+    @property
+    def tensors(self):
+        """Get the (sliced) tensors for this partition.
+
+        Assumes the wrapped dataset is an instance of TensorDataset.
+
+        Returns:
+            The tensors
+
+        """
+        return tuple([t for t in self.dataset.tensors])
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """Get a data row by index.
 
