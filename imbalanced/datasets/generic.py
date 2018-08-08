@@ -3,7 +3,7 @@
 from typing import Dict, Tuple, List, Union, Any, Optional
 import numpy as np
 import torch
-from torch.utils.data.dataset import Dataset, Subset
+from torch.utils.data import Dataset, Sampler
 
 
 class DatasetWrapper(Dataset):
@@ -239,7 +239,7 @@ class PartitionedDataset(DatasetWrapper):
         ]
 
 
-class ResampledDataset(Subset):
+class ResampledDataset(DatasetWrapper):
     """Resampled version of a wrapped dataset.
 
     For now, this is just a renaming of torch's Subset class--to better
@@ -248,15 +248,30 @@ class ResampledDataset(Subset):
 
     Note that a combination of synthetic generation and simple sampling can be
     achieved by using this wrapper on a ConcatDataset consisting of the
-    original and the synthetically generated samples.  See the pre-processors
-    module for more information.
-
-    todo: seamlessly incorporate synthetic sampling via the above
+    original and the synthetically generated samples.
     """
 
-    def __init__(self, dataset: Dataset,
-                 indices: Optional[np.ndarray] = None) -> None:
-        if indices is None:
-            # Default to entire dataset
-            indices = np.arange(len(dataset), dtype=np.int)
-        super().__init__(dataset, indices)
+    def __init__(self, dataset: Dataset, sampler: Sampler) -> None:
+        super().__init__(dataset)
+        self.sampler = sampler
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Get a data row by index.
+
+        Args:
+            idx: The index of the desired row.
+
+        Returns:
+            The desired row (input, target)
+
+        """
+        return self.dataset[self.sampler[idx]]
+
+    def __len__(self) -> int:
+        """Get the total number of rows in the dataset.
+
+        Returns:
+            The number of rows.
+
+        """
+        return len(self.sampler)
