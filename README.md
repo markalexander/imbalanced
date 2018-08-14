@@ -4,8 +4,8 @@
 Imbalanced learning tools and experimental framework for PyTorch.
 Big data friendly.
 
-**This is pre-alpha software.  Features and the exposed API are likely to
-change.**
+**This is pre-alpha software.  Not all planned features are implemented.
+Features and the exposed API are likely to change.**
 
 
 ## Getting started
