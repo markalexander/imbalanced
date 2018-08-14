@@ -57,10 +57,10 @@ class Pipeline(CanonicalArgsMixin):
             assert issubclass(type(s), Sampler)
             self._samplers.append(s)
 
-    def train(self, dataset: Dataset) -> None:
+    def train(self, train_dataset: Dataset, val_dataset: Dataset) -> None:
         """Train the pipeline.
         
-        Convenience method that assumes the predictor has a train() method.
+        Convenience method that assumes the predictor has a train_all() method.
         Otherwise, you should train the predictor externally.
 
         Args:
@@ -71,14 +71,18 @@ class Pipeline(CanonicalArgsMixin):
 
         """
         # Argument validation
-        assert isinstance(dataset, Dataset),\
+        assert isinstance(train_dataset, Dataset),\
             'Training dataset argument must be an instance of' \
+            'Dataset (or a subclass)'
+        assert isinstance(val_dataset, Dataset),\
+            'Validation dataset argument must be an instance of' \
             'Dataset (or a subclass)'
         # Resample the data
         for sampler in self.samplers:
-            dataset = ResampledDataset(dataset, sampler)
+            train_dataset = ResampledDataset(train_dataset, sampler)
+            val_dataset = ResampledDataset(val_dataset, sampler)
         # Train the predictor
-        self.predictor.train(dataset)
+        self.predictor.train_all(train_dataset, val_dataset)
 
     def predict(self, inputs: torch.Tensor) -> torch.Tensor:
         """Return the end-to-end prediction(s) for the given input(s).
@@ -120,7 +124,7 @@ class Pipeline(CanonicalArgsMixin):
         """
         return [
             ('samplers', self.samplers),
-            ('net', self.predictor),
+            ('predictor', self.predictor),
         ]
 
 

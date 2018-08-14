@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from typing import Dict, Tuple, List, Union, Any, Optional
+from math import ceil
 import numpy as np
 import torch
 from torch.utils.data import Dataset, Sampler
@@ -94,8 +95,8 @@ class DatasetPartition(DatasetWrapper):
 
         Args:
             dataset: The dataset that this is a partition of.
-            start:   The start point of the partition.
-            stop:    The stop point of the partition.
+            start:   The start point of the partition.  Inclusive.
+            stop:    The stop point of the partition.  Exclusive.
 
         Returns:
             None
@@ -104,21 +105,11 @@ class DatasetPartition(DatasetWrapper):
         super().__init__(dataset)
         assert isinstance(start, int), 'Partition start must be an integer.'
         assert isinstance(stop, int), 'Partition end must be an integer.'
+        assert stop <= len(dataset),\
+            'Partition stop must not exceed length of dataset.'
         assert stop >= start, 'Partition stop must be >= start.'
         self.start = start
         self.stop = stop
-
-    @property
-    def tensors(self):
-        """Get the (sliced) tensors for this partition.
-
-        Assumes the wrapped dataset is an instance of TensorDataset.
-
-        Returns:
-            The tensors
-
-        """
-        return tuple([t for t in self.dataset.tensors])
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """Get a data row by index.
@@ -187,9 +178,21 @@ class PartitionedDataset(DatasetWrapper):
             'Partitions must be non-empty'
 
         # Convert fractional partitions to integer sizes
-        if sum(list(partition_spec.values())) <= 1:
-            partition_spec = {name: round(fraction * len(dataset))
-                              for name, fraction in partition_spec.items()}
+        if sum(partition_spec.values()) <= 1:
+            int_partition_spec = {}
+            n_partitions = len(partition_spec)
+            for name, fraction in partition_spec.items():
+                if len(int_partition_spec) == n_partitions - 1:
+                    # Last partition, give remaining len if this is smaller than
+                    # the calculated partition
+                    int_partition_spec[name] = min(
+                        int(ceil(fraction * len(dataset))),
+                        len(dataset) - sum(int_partition_spec.values())
+                    )
+                else:
+                    int_partition_spec[name] = int(
+                        round(fraction * len(dataset)))
+            partition_spec = int_partition_spec
 
         # Further validation
         for size in partition_spec.values():
@@ -204,7 +207,7 @@ class PartitionedDataset(DatasetWrapper):
         for name in list(partition_spec.keys()):
             stop = start + partition_spec[name]
             partitions[name] = DatasetPartition(dataset, start, stop)
-            start = stop + 1
+            start = stop
         self.partitions = partitions
 
     def __getattr__(self, name):

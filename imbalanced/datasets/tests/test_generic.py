@@ -129,6 +129,26 @@ class TestPartitionedDataset:
         assert len(dataset.b) == 30
         assert len(dataset.c) == 20
 
+    def test_tied_partitions(self) -> None:
+        """Test whether the constructor correctly splits a dataset when rounding
+        issues cause a total length that is not correct.
+
+        E.g. dataset with 5 items split into halves.  Each half will get
+        0.5 * 5 = 2.5 of the dataset.  When rounded this means two partitions
+        of 3 elements.  But that gives a total len of 6, which is more than the
+        original.
+        """
+        dataset = self.make_random(5, {'a': 0.5, 'b': 0.5})
+        assert \
+            len(dataset.a) == 3 and len(dataset.b) == 2 \
+            or len(dataset.a) == 2 and len(dataset.b) == 3
+        dataset = self.make_random(10, {'a': 1/3, 'b': 1/3, 'c': 1/3})
+        assert any((
+            len(dataset.a) == 4 and len(dataset.b) == 3 and len(dataset.c) == 3,
+            len(dataset.a) == 3 and len(dataset.b) == 4 and len(dataset.c) == 3,
+            len(dataset.a) == 3 and len(dataset.b) == 3 and len(dataset.c) == 4
+        ))
+
     def test_default_partition_spec(self) -> None:
         """Test whether the default partition spec is applied when none are
         specified.
@@ -195,14 +215,6 @@ class TestPartitionedDataset:
 
 class TestResampledDataset:
     """Tests for the ResampledDataset class."""
-
-    def test_all_rows_sampled_by_default(self) -> None:
-        """Test whether the default behaviour (no provided samples) works
-        correctly."""
-        resampled, original = self.make_random()
-        assert len(resampled) == len(original)
-        for i in range(len(original)):
-            assert dataset_rows_are_equal(original[i], resampled[i])
 
     @staticmethod
     def make_random(size: int = 100,
