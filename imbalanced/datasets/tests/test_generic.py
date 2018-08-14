@@ -117,8 +117,8 @@ class TestPartitionedDataset:
         for i in range(len(ps)):
             for j in range(len(ps)):
                 if i != j:
-                    assert not ps[i][0] <= ps[j][0] <= ps[i][1]
-                    assert not ps[j][0] <= ps[i][0] <= ps[j][1]
+                    assert not ps[i][0] <= ps[j][0] < ps[i][1]
+                    assert not ps[j][0] <= ps[i][0] < ps[j][1]
 
     def test_fractional_partitions(self) -> None:
         """Test whether the constructor accepts and correctly indexes partitions
