@@ -7,23 +7,18 @@ Definitions for various resamplers commonly used in imbalanced data scenarios.
 from typing import Any
 from math import floor
 import numpy as np
-from torch.utils.data import Dataset, TensorDataset, SubsetRandomSampler
+from abc import abstractmethod
+from torch.utils.data import TensorDataset
 
 
-class IndexRandomSampler(SubsetRandomSampler):
+class IndexSampler:
 
-    def __init__(self, indices) -> None:
-        """Samples elements randomly from a given list of indices, without
-        replacement.
-
-        Essentially wraps PyTorch's SubsetRandomSampler with a class name
-        that doesn't imply it must be used for subsets only, since indices
-        may be freely used for super-sampling.
-        """
-        super().__init__(indices)
+    @abstractmethod
+    def get_sample_indices(self, dataset):
+        pass
 
 
-class RandomResampler(IndexRandomSampler):
+class RandomResampler(IndexSampler):
     """Random resampler.
 
     Chooses resampled indices of the original dataset purely at random in
@@ -31,11 +26,10 @@ class RandomResampler(IndexRandomSampler):
     both sub- and super-sampling.
     """
 
-    def __init__(self, dataset: Dataset, rate: float) -> None:
+    def __init__(self, rate: float) -> None:
         """Create an RandomResampler object.
 
         Args:
-            dataset: The dataset to be resampled.
             rate:    The resampling rate.  Values 0 <= r < 1 result in under-
                      or subsampling of the data.  Value r > 1 result in over-
                      or super-sampling.  E.g. r = 0.3 will result in a dataset
@@ -46,15 +40,14 @@ class RandomResampler(IndexRandomSampler):
             None.
 
         """
-        self.dataset = dataset
+        assert rate >= 0, 'Resampling rate must be non-negative'
         self.rate = rate
-        # Sample dataset indices
-        super().__init__(
-            resample_indices(np.arange(len(dataset)), rate)
-        )
+
+    def get_sample_indices(self, dataset):
+        return resample_indices(np.arange(len(dataset)), self.rate)
 
 
-class RandomTargetedResampler(IndexRandomSampler):
+class RandomTargetedResampler(RandomResampler):
     """Random resampling on a specific target value.
 
     Chooses resampled indices of the original dataset from the specified class
@@ -62,13 +55,12 @@ class RandomTargetedResampler(IndexRandomSampler):
     both sub- and super-sampling.
     """
 
-    def __init__(self, dataset: TensorDataset,
+    def __init__(self,
                  resample_target_value: Any,
                  rate: float) -> None:
         """Create an RandomResampler object.
 
         Args:
-            dataset:               The dataset to be resampled.
             resample_target_value: The target value of the class that will be
                                    resampled can e.g. be an integral class
                                    label, real-valued, or any possible target
@@ -83,20 +75,29 @@ class RandomTargetedResampler(IndexRandomSampler):
             None.
 
         """
-        self.dataset = dataset
-        self.rate = rate
-        # Sample dataset indices
-        targets = dataset.tensors[-1].numpy()
+        super().__init__(rate)
+        self.resample_target_value = resample_target_value
+
+    def get_sample_indices(self, dataset: TensorDataset):
         # Grab indices of the class we want to resample, and those of the others
-        resample_class_indices = np.where(targets == resample_target_value)[0]
-        other_indices = np.where(targets != resample_target_value)[0]
+        resample_class_indices = []
+        other_indices = []
+        for idx in range(len(dataset)):
+            _, target = dataset[idx]
+            if target == self.resample_target_value:
+                resample_class_indices.append(idx)
+            else:
+                other_indices.append(idx)
         # Run the resampling on the class indices
-        resample_class_indices = resample_indices(resample_class_indices, rate)
+        resample_class_indices = resample_indices(resample_class_indices,
+                                                  self.rate)
+        # Convert others to np array
+        other_indices = np.array(other_indices, dtype=np.int)
         # Concat both back into one big set of indices
         all_indices = np.concatenate((resample_class_indices, other_indices))
         # Shuffle it
         np.random.shuffle(all_indices)
-        super().__init__(all_indices)
+        return all_indices
 
 
 def resample_indices(all_indices, rate: float):
@@ -136,4 +137,4 @@ def resample_indices(all_indices, rate: float):
     if rate > 0.0:
         target_len = int(round(rate * len(all_indices)))
         sampled_indices.extend(all_indices[:target_len])
-    return np.array(sampled_indices)
+    return np.array(sampled_indices, dtype=np.int)
