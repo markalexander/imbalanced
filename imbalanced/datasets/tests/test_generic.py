@@ -6,8 +6,10 @@ import torch
 from torch import Tensor
 from torch.utils.data import TensorDataset
 from typing import Tuple, Optional, Union, Dict
+from ...samplers import IndexSampler
+from ...binners import Binner
 from ..generic import DatasetWrapper, DatasetPartition, PartitionedDataset,\
-    ResampledDataset
+    ResampledDataset, BinnedDataset
 
 
 def dataset_rows_are_equal(row1: Tuple[Tensor, ...],
@@ -216,20 +218,126 @@ class TestPartitionedDataset:
 class TestResampledDataset:
     """Tests for the ResampledDataset class."""
 
-    @staticmethod
-    def make_random(size: int = 100,
-                    samples: Optional[np.ndarray] = None)\
-            -> Tuple[ResampledDataset, TensorDataset]:
-        """Create a random ResampledDataset object.
+    def test_resamples_from_indices(self):
+        dataset = TensorDataset(
+            torch.Tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        )
+        resampled_dataset = ResampledDataset(dataset, [0, 2, 5])
+        assert 3 == len(resampled_dataset)
+        assert 1 == resampled_dataset[0][-1].item()
+        assert 3 == resampled_dataset[1][-1].item()
+        assert 6 == resampled_dataset[2][-1].item()
 
-        Args:
-            size:    The desired number of rows in the random dataset.
-            samples: The desired samples to use in the object.
+    def test_resamples_from_resampler(self):
+        dataset = TensorDataset(
+            torch.Tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        )
+        class ExampleResampler(IndexSampler):
+            def get_sample_indices(self, dataset):
+                return [0, 2, 5]
+        resampled_dataset = ResampledDataset(dataset, ExampleResampler())
+        assert 3 == len(resampled_dataset)
+        assert 1 == resampled_dataset[0][-1].item()
+        assert 3 == resampled_dataset[1][-1].item()
+        assert 6 == resampled_dataset[2][-1].item()
 
-        Returns:
-            The random ResampledDataset.
 
-        """
-        original = make_random_dataset(size)[0]
-        resampled = ResampledDataset(original, samples)
-        return resampled, original
+class TestBinnedDataset:
+    """Tests for the BinnedDataset class."""
+
+    def test_bins_non_singletons_correctly(self):
+        # Real values
+        dataset = TensorDataset(
+            torch.Tensor([1.1, 8.11, 1.05, 3.9, 4.0, 4.21,
+                          6.07, 9.1, 9.9, 7.9])
+        )
+        binned_dataset = BinnedDataset(
+            dataset,
+            [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8),
+             (8, 9), (9, 10)]
+        )
+        assert len(dataset) == len(binned_dataset)
+        assert 1 == binned_dataset[0][-1].item()
+        assert 8 == binned_dataset[1][-1].item()
+        assert 1 == binned_dataset[2][-1].item()
+        assert 3 == binned_dataset[3][-1].item()
+        assert 4 == binned_dataset[4][-1].item()
+        assert 4 == binned_dataset[5][-1].item()
+        assert 6 == binned_dataset[6][-1].item()
+        assert 9 == binned_dataset[7][-1].item()
+        assert 9 == binned_dataset[8][-1].item()
+        assert 7 == binned_dataset[9][-1].item()
+        # Integral values
+        dataset = TensorDataset(
+            torch.Tensor([1, 5, 1, 8, 9, 7])
+        )
+        binned_dataset = BinnedDataset(dataset, [(0, 5), (5, 10)])
+        assert len(dataset) == len(binned_dataset)
+        assert 0 == binned_dataset[0][-1].item()
+        assert 1 == binned_dataset[1][-1].item()
+        assert 0 == binned_dataset[2][-1].item()
+        assert 1 == binned_dataset[3][-1].item()
+        assert 1 == binned_dataset[4][-1].item()
+        assert 1 == binned_dataset[5][-1].item()
+
+    def test_bins_singletons_correctly(self):
+        dataset = TensorDataset(
+            torch.Tensor([0.0, 1.0, 0.0, 0.0, 1.0])
+        )
+        binned_dataset = BinnedDataset(
+            dataset,
+            [(0,), (1,)]
+        )
+        assert len(dataset) == len(binned_dataset)
+        assert 0 == binned_dataset[0][-1].item()
+        assert 1 == binned_dataset[1][-1].item()
+        assert 0 == binned_dataset[2][-1].item()
+        assert 0 == binned_dataset[3][-1].item()
+        assert 1 == binned_dataset[4][-1].item()
+
+    def test_bins_mixed_correctly(self):
+        dataset = TensorDataset(
+            torch.Tensor([0.0, 1.0, 1.3, 0.0, 3.5])
+        )
+        binned_dataset = BinnedDataset(
+            dataset,
+            [(0,), (0, 100)]
+        )
+        assert len(dataset) == len(binned_dataset)
+        assert 0 == binned_dataset[0][-1].item()
+        assert 1 == binned_dataset[1][-1].item()
+        assert 1 == binned_dataset[2][-1].item()
+        assert 0 == binned_dataset[3][-1].item()
+        assert 1 == binned_dataset[4][-1].item()
+
+    def test_rejects_non_covering_bins(self):
+        dataset = TensorDataset(
+            torch.Tensor([0.0, 1.01, 1.3, 0.1])
+        )
+        with pytest.raises(ValueError):
+            assert 1.01 == BinnedDataset(
+                dataset,
+                [(0, 1), (1.1, 2)]
+            )[1]
+
+    def test_bins_from_binner(self):
+        dataset = TensorDataset(
+            torch.Tensor([1.1, 8.11, 1.05, 3.9, 4.0, 4.21,
+                          6.07, 9.1, 9.9, 7.9])
+        )
+        class ExampleBinner(Binner):
+            def get_bins(self, dataset):
+                return [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7),
+                        (7, 8), (8, 9), (9, 10)]
+        binned_dataset = BinnedDataset(dataset, ExampleBinner())
+        assert len(dataset) == len(binned_dataset)
+        assert 1 == binned_dataset[0][-1].item()
+        assert 8 == binned_dataset[1][-1].item()
+        assert 1 == binned_dataset[2][-1].item()
+        assert 3 == binned_dataset[3][-1].item()
+        assert 4 == binned_dataset[4][-1].item()
+        assert 4 == binned_dataset[5][-1].item()
+        assert 6 == binned_dataset[6][-1].item()
+        assert 9 == binned_dataset[7][-1].item()
+        assert 9 == binned_dataset[8][-1].item()
+        assert 7 == binned_dataset[9][-1].item()

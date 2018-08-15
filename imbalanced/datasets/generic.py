@@ -5,6 +5,8 @@ from math import ceil
 import numpy as np
 import torch
 from torch.utils.data import Dataset, Sampler
+from ..samplers import IndexSampler
+from ..binners import Binner
 
 
 class DatasetWrapper(Dataset):
@@ -124,7 +126,10 @@ class DatasetPartition(DatasetWrapper):
         if 0 <= idx < len(self):
             return self.dataset[self.start + idx]
         else:
-            raise IndexError('Index %s is outside the partition' % idx)
+            raise IndexError('Index {} is outside the partition ({})'.format(
+                idx,
+                len(self)
+            ))
 
     def __len__(self) -> int:
         """Get the total number of rows in the dataset.
@@ -243,20 +248,13 @@ class PartitionedDataset(DatasetWrapper):
 
 
 class ResampledDataset(DatasetWrapper):
-    """Resampled version of a wrapped dataset.
+    """Resampled version of a dataset, using sample indices."""
 
-    For now, this is just a renaming of torch's Subset class--to better
-    represent what it is used for here--with the addition of defaulting to
-    a full sample of the underlying dataset.
-
-    Note that a combination of synthetic generation and simple sampling can be
-    achieved by using this wrapper on a ConcatDataset consisting of the
-    original and the synthetically generated samples.
-    """
-
-    def __init__(self, dataset: Dataset, sampler: Sampler) -> None:
+    def __init__(self, dataset: Dataset, indices) -> None:
         super().__init__(dataset)
-        self.sampler = sampler
+        if isinstance(indices, IndexSampler):
+            indices = indices.get_sample_indices(dataset)
+        self.indices = indices
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """Get a data row by index.
@@ -268,7 +266,7 @@ class ResampledDataset(DatasetWrapper):
             The desired row (input, target)
 
         """
-        return self.dataset[self.sampler[idx]]
+        return self.dataset[self.indices[idx]]
 
     def __len__(self) -> int:
         """Get the total number of rows in the dataset.
@@ -277,4 +275,103 @@ class ResampledDataset(DatasetWrapper):
             The number of rows.
 
         """
-        return len(self.sampler)
+        return len(self.indices)
+
+
+class BinnedDataset(DatasetWrapper):
+    """Binned dataset.
+
+    Groups specified intervals (bins) of the target values into classes.
+
+    Can be used on real-valued or class labelled data (to merge classes).
+    """
+
+    def __init__(self, dataset: Dataset, bins) -> None:
+        """Create a BinnedDataset object.
+
+        todo: allow more flexibility in interval specification.  This is not
+        deeply important for the current typical use cases, though it could
+        crop up where e.g. we need wholly-closed or wholly-open intervals.
+
+        Args:
+            dataset: The dataset to be binned.
+            bins:    The bins, as ordered intervals of the form [a, b), i.e.
+                     with a inclusive and b exclusive.  Singletons may also be
+                     given for an exact match.  Where a singleton is given,
+                     the next interval is treated as (a, b).
+        """
+        super().__init__(dataset)
+        if isinstance(bins, Binner):
+            bins = bins.get_bins(dataset)
+        self.bins = bins
+        self.idx_bins = -1 * np.ones((len(dataset),), dtype=np.int)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Get a data row by index.
+
+        Args:
+            idx: The index of the desired row.
+
+        Returns:
+            The desired row (input, target)
+
+        """
+        row = self.dataset[idx]
+        if self.idx_bins[idx] == -1:
+            found_bin = False
+            for class_idx, bin in enumerate(self.bins):
+                if row[-1] < bin[0]:
+                    # Should have been before this bin, so can't be in any bin
+                    break
+                elif len(bin) == 1:
+                    if bin[0] == row[-1]:
+                        # Singleton
+                        self.idx_bins[idx] = class_idx
+                        found_bin = True
+                        break
+                elif bin[0] <= row[-1] < bin[1]:
+                    # Half open interval
+                    self.idx_bins[idx] = class_idx
+                    found_bin = True
+                    break
+            if not found_bin:
+                raise ValueError('Target value {} does not belong to any bin'.format(
+                    row[-1]
+                ))
+        return row[:-1] + (torch.Tensor([self.idx_bins[idx]]),)
+
+
+class TransformedDataset(DatasetWrapper):
+    """Transformed dataset wrapper.
+
+    Apply the transform to the data, e.g. a predictor or other transformation.
+    """
+
+    def __init__(self, dataset: Dataset, transform) -> None:
+        """Create a TransformedDataset object.
+
+        Args:
+            dataset:   The dataset to wrap.
+            transform: The transform to be applied.
+
+        Returns:
+              None
+
+        """
+        super().__init__(dataset)
+        self.transform = transform
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Get a data row by index.
+
+        Args:
+            idx: The index of the desired row.
+
+        Returns:
+            The desired row (input, target)
+
+        """
+        row = self.dataset[idx]
+        for i in range(len(row) - 1):
+            row[i] = self.transform(row[i])
+        return row
