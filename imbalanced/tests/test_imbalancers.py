@@ -15,19 +15,14 @@ original_inputs = torch.Tensor([
 ])
 
 original_targets = torch.Tensor([
-    1,
-    2,
-    3,
-    4,
-    5,
-    6
+    1, 2, 3, 4, 5, 6
 ])
 
 
 class TestInflatedFeatureFilteredDataset:
     """Tests for the InflatedFeatureFilteredDataset class."""
 
-    def test_match_al_target_is_changedl(self) -> None:
+    def test_match_al_target_is_changed(self) -> None:
         """Tests whether the target is changed for an 'all' feature match."""
         dataset = InflatedFeatureFilteredDataset(
             TensorDataset(original_inputs, original_targets),
