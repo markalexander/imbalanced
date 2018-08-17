@@ -9,6 +9,20 @@ Big data friendly.
 Features and the exposed API are likely to change.**
 
 ----
+
+## Contents
+
+  - [Quick Start](#quick-start)
+  - [Datasets and Wrappers](#datasets-and-wrappers)
+  - [Pipelines](#pipelines)
+  - [Samplers](#samplers)
+  - [Predictors](#predictors)
+    - [Classifiers](#classifiers)
+    - [Regressors](#regressors)
+  - [Metrics](#metrics)
+  - [FAQ](#faq)
+
+----
 <!--/REPORT-IGNORE-->
 
 
