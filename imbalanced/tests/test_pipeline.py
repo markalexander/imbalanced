@@ -21,14 +21,15 @@ predictor = DummyNet()
 class TestPipeline:
 
     def test_constructor_rejects_invalid_elements(self) -> None:
-        # Invalid pre-processor(s)
-        with pytest.raises(AssertionError):
-            # noinspection PyTypeChecker
-            Pipeline(1, predictor)
+        pass
         # # Invalid predictor
         # with pytest.raises(AssertionError):
         #     # noinspection PyTypeChecker
-        #     Pipeline(None, 1)
+        #     Pipeline(1, None)
+        # Invalid sampler
+        # with pytest.raises(AssertionError):
+        #     # noinspection PyTypeChecker
+        #     Pipeline(predictor, 1)
         # with pytest.raises(AssertionError):
         #     # noinspection PyTypeChecker
         #     Pipeline(None, None)
@@ -37,4 +38,4 @@ class TestPipeline:
         pipeline = Pipeline(None, predictor)
         with pytest.raises(AssertionError):
             # noinspection PyTypeChecker
-            pipeline.train(1, 1)
+            pipeline.train_all(1, 1)

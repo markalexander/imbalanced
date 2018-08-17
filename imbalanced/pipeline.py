@@ -5,66 +5,42 @@ This file contains the basic definition for an imbalanced data 'pipeline'.
 """
 
 import torch
-from typing import List, Union, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Any
 from torch.utils.data import Dataset
-from torch.utils.data.sampler import Sampler
-from .datasets import ResampledDataset
-from .samplers import RandomClassResampler
+from imbalanced.datasets import ResampledDataset
+from .samplers import IndexSampler, RandomTargetedResampler
 from .meta import CanonicalArgsMixin
 
 
 class Pipeline(CanonicalArgsMixin):
     """Imbalanced data pipeline."""
 
-    def __init__(self, samplers: Optional[Union[List[Sampler], Sampler]],
-                 predictor: Any) -> None:
+    def __init__(self, predictor: Any,
+                 sampler: Optional[IndexSampler] = None) -> None:
         """Create a pipeline object.
 
         Args:
-            samplers:  A (list of) re-sampler(s), which may be empty or None for
-                       no resampling.
             predictor: The predictor.
-
-        """
-        self._samplers = None
-        if samplers is None:
-            samplers = []
-        self.samplers = samplers
-        self.predictor = predictor
-
-    @property
-    def samplers(self) -> List[Sampler]:
-        """Get the current pre-processor(s).
+            sampler:   A (list of) re-sampler(s), which may be empty or None for
+                       no resampling.
 
         Returns:
-            The list of pre-processors.
+            None
 
         """
-        return self._samplers
+        self.predictor = predictor
+        self.sampler = sampler
 
-    @samplers.setter
-    def samplers(self, samplers: Union[List[Sampler], Sampler]) -> None:
-        """Set the pre-processors.
-
-        Args:
-            samplers: The preprocessor or list of samplers to set.
-
-        """
-        if not isinstance(samplers, list):
-            samplers = [samplers]
-        self._samplers = []
-        for s in samplers:
-            assert issubclass(type(s), Sampler)
-            self._samplers.append(s)
-
-    def train(self, train_dataset: Dataset, val_dataset: Dataset) -> None:
+    def train_all(self, train_dataset: Dataset, val_dataset: Dataset) -> None:
         """Train the pipeline.
         
         Convenience method that assumes the predictor has a train_all() method.
-        Otherwise, you should train the predictor externally.
+        Otherwise, you should train the predictor using your own external
+        procedure.
 
         Args:
-            dataset: The dataset to use for training.
+            train_dataset: The dataset to use for training.
+            val_dataset:   The dataset to use for validation.
 
         Returns:
             None
@@ -77,10 +53,10 @@ class Pipeline(CanonicalArgsMixin):
         assert isinstance(val_dataset, Dataset),\
             'Validation dataset argument must be an instance of' \
             'Dataset (or a subclass)'
-        # Resample the data
-        for sampler in self.samplers:
-            train_dataset = ResampledDataset(train_dataset, sampler)
-            val_dataset = ResampledDataset(val_dataset, sampler)
+        # Resample
+        if self.sampler is not None:
+            train_dataset = ResampledDataset(train_dataset, self.sampler)
+            val_dataset = ResampledDataset(val_dataset, self.sampler)
         # Train the predictor
         self.predictor.train_all(train_dataset, val_dataset)
 
@@ -123,8 +99,8 @@ class Pipeline(CanonicalArgsMixin):
 
         """
         return [
-            ('samplers', self.samplers),
             ('predictor', self.predictor),
+            ('sampler', self.sampler),
         ]
 
 
@@ -140,14 +116,14 @@ class AutoPipeline(Pipeline):
                          self.choose_predictor(dataset))
 
     @staticmethod
-    def choose_samplers(dataset) -> List[Sampler]:
+    def choose_samplers(dataset) -> IndexSampler:
         """Get (choose) a set of pre-processors.
 
         Returns:
             The list of pre-processors.
 
         """
-        return [RandomClassResampler(dataset, 0, 0.5)]
+        return RandomTargetedResampler(0., 0.5)
 
     @staticmethod
     def choose_predictor(dataset) -> Any:

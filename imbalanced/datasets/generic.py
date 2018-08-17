@@ -4,7 +4,7 @@ from typing import Dict, Tuple, List, Union, Any, Optional
 from math import ceil
 import numpy as np
 import torch
-from torch.utils.data import Dataset, Sampler
+from torch.utils.data import Dataset
 from ..samplers import IndexSampler
 from ..binners import Binner
 
@@ -286,7 +286,7 @@ class BinnedDataset(DatasetWrapper):
     Can be used on real-valued or class labelled data (to merge classes).
     """
 
-    def __init__(self, dataset: Dataset, bins) -> None:
+    def __init__(self, dataset: Dataset, bins, bin_classes=None) -> None:
         """Create a BinnedDataset object.
 
         todo: allow more flexibility in interval specification.  This is not
@@ -302,8 +302,11 @@ class BinnedDataset(DatasetWrapper):
         """
         super().__init__(dataset)
         if isinstance(bins, Binner):
-            bins = bins.get_bins(dataset)
+            bins, bin_classes = bins.get_bins_and_classes(dataset)
+        if bin_classes is None:
+            bin_classes = list(range(len(bins)))
         self.bins = bins
+        self.bin_classes = bin_classes
         self.idx_bins = -1 * np.ones((len(dataset),), dtype=np.int)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -326,19 +329,19 @@ class BinnedDataset(DatasetWrapper):
                 elif len(bin) == 1:
                     if bin[0] == row[-1]:
                         # Singleton
-                        self.idx_bins[idx] = class_idx
+                        self.idx_bins[idx] = self.bin_classes[class_idx]
                         found_bin = True
                         break
                 elif bin[0] <= row[-1] < bin[1]:
                     # Half open interval
-                    self.idx_bins[idx] = class_idx
+                    self.idx_bins[idx] = self.bin_classes[class_idx]
                     found_bin = True
                     break
             if not found_bin:
                 raise ValueError('Target value {} does not belong to any bin'.format(
                     row[-1]
                 ))
-        return row[:-1] + (torch.Tensor([self.idx_bins[idx]]),)
+        return row[:-1] + (torch.LongTensor([self.idx_bins[idx]]),)
 
 
 class TransformedDataset(DatasetWrapper):

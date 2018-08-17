@@ -222,6 +222,7 @@ class SKLearnSyntheticRegression(torch.utils.data.TensorDataset,
             ('shuffle', shuffle),
             ('random_state', random_state)
         ]
+        print(self._args)
         inputs, targets = make_regression(**OrderedDict(self._args))
         super().__init__(
             torch.from_numpy(inputs).float(),
