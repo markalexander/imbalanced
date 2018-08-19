@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import torch
+from typing import Any, Tuple, List
 from torch.utils.data import Dataset
 from ..datasets import BinnedDataset, TransformedDataset, ResampledDataset
 from ..samplers import RandomTargetedResampler
@@ -12,9 +13,9 @@ from .misc import TrainableModelMixin, train_nn, FeedForwardBase
 class FeedForwardRegressor(FeedForwardBase):
     """Simple multi-layer feed-forward network."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, out_dim=1, **kwargs) -> None:
         """Create a FeedForwardRegressor object."""
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, out_dim=out_dim, **kwargs)
 
     def forward(self, inputs):
         """Calculate the output of the model for the given inputs.
@@ -40,7 +41,7 @@ class HurdleRegressor(TrainableModelMixin):
     input features at that idx.
     """
 
-    def __init__(self, classifier=None, regressor=None) -> None:
+    def __init__(self, in_dim, classifier=None, regressor=None) -> None:
         """Create a HurdleModel object.
 
         Args:
@@ -51,11 +52,12 @@ class HurdleRegressor(TrainableModelMixin):
             None
 
         """
+        self.in_dim = in_dim
         if classifier is None:
-            classifier = FeedForwardClassifier()
+            classifier = FeedForwardClassifier(in_dim, out_dim=2)
         self.classifier = classifier
         if regressor is None:
-            regressor = FeedForwardRegressor()
+            regressor = FeedForwardRegressor(in_dim)
         self.regressor = regressor
 
     def forward(self, inputs):
@@ -93,7 +95,8 @@ class HurdleRegressor(TrainableModelMixin):
         clf_val_dataset = BinnedDataset(val_dataset, ZeroNonZeroBinner())
 
         # Train classifier
-        train_nn(self.classifier, clf_train_dataset, clf_val_dataset, is_classification=True)
+        train_nn(self.classifier, clf_train_dataset, clf_val_dataset,
+                 is_classification=True)
 
         # Get regressor datasets
         # Essentially resample out the zero class
@@ -104,17 +107,33 @@ class HurdleRegressor(TrainableModelMixin):
         # Train regressor
         train_nn(self.regressor, reg_train_dataset, reg_val_dataset)
 
+    @property
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
-class ReconRegressor(TrainableModelMixin):
+        Returns:
+            The arguments, as a list of tuples (arg_name, arg_value).
+
+        """
+        return [
+            ('in_dim', self.in_dim),
+            ('classifier', self.classifier),
+            ('regressor', self.regressor),
+        ]
+
+
+class IntermediateClassificationRegressor(TrainableModelMixin):
     """Reconstituted regressor model."""
 
-    def __init__(self, classifier, regressor, binner=None):
+    def __init__(self, classifier=None, regressor=None, binner=None):
         """Create a ReconRegressorModel.
 
         Args:
             classifier: The classifier.
             regressor:  The regressor
-            binner:     The binner.
+            binner:     The binner, which determines the classes for the
+                        intermediate classification.
 
         Returns:
             None
@@ -162,7 +181,8 @@ class ReconRegressor(TrainableModelMixin):
         clf_train_dataset = BinnedDataset(train_dataset, self.binner)
         clf_val_dataset = BinnedDataset(val_dataset, self.binner)
         # Train classifier
-        train_nn(self.classifier, clf_train_dataset, clf_val_dataset, is_classification=True)
+        train_nn(self.classifier, clf_train_dataset, clf_val_dataset,
+                 is_classification=True)
         # Get regression dataset
         reg_train_dataset = TransformedDataset(
             train_dataset,
@@ -174,4 +194,19 @@ class ReconRegressor(TrainableModelMixin):
         )
         # Train regressor
         train_nn(self.regressor, reg_train_dataset, reg_val_dataset)
+
+    @property
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
+
+        Returns:
+            The arguments, as a list of tuples (arg_name, arg_value).
+
+        """
+        return [
+            ('classifier', self.classifier),
+            ('regressor', self.regressor),
+            ('binner', self.binner)
+        ]
 

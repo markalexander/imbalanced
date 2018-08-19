@@ -1,2 +1,2 @@
 
-from .regressors import HurdleRegressor, ReconRegressor
+from .regressors import FeedForwardRegressor, HurdleRegressor, IntermediateClassificationRegressor

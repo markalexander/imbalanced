@@ -6,12 +6,12 @@ from torch.utils.data import Dataset, DataLoader
 from torch.autograd import Variable
 from abc import ABC, abstractmethod
 from typing import Optional
-import torch.nn.functional as F
-from imbalanced.datasets import BinnedDataset, TransformedDataset, ResampledDataset
-from imbalanced.samplers import RandomTargetedResampler
-from imbalanced.binners import ZeroNonZeroBinner, EqualBinner
 from torch.nn.init import xavier_uniform_
 from torch.nn import Linear
+
+
+def make_dataloader(dataset, num_workers=10, batch_size=10000):
+    return DataLoader(dataset, num_workers=num_workers, batch_size=batch_size)
 
 
 class TrainableModelMixin(ABC):
@@ -27,8 +27,8 @@ class TrainableModelMixin(ABC):
 class FeedForwardBase(nn.Module, TrainableModelMixin):
     """Simple multi-layer feed-forward network."""
 
-    def __init__(self, in_dim: int, out_dim: int, depth: int,
-                 hidden_dim: Optional[int] = None) -> None:
+    def __init__(self, in_dim: int, out_dim: int, depth: int = 2,
+                 hidden_dim: Optional[int] = None, activation=None) -> None:
         """Create a FeedForwardRegressor object.
 
         Args:
@@ -38,6 +38,7 @@ class FeedForwardBase(nn.Module, TrainableModelMixin):
             depth:      The number of hidden layers.
             hidden_dim: The dimension of the hidden layers.  Defaults to
                         midpoint of in_dim and out_dim.
+            activation: The type of activations to use.
 
         Returns:
             None.
@@ -45,15 +46,17 @@ class FeedForwardBase(nn.Module, TrainableModelMixin):
         """
         if hidden_dim is None:
             hidden_dim = int(round((in_dim + out_dim) / 2))
+        if activation is None:
+            activation = nn.ReLU
         super().__init__()
         layers = [
             nn.Linear(in_dim, hidden_dim),
-            nn.ReLU()
+            activation()
         ]
         for i in range(depth):
             layers.extend([
                 nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU()
+                activation()
             ])
         layers.append(
             nn.Linear(hidden_dim, out_dim)
@@ -98,8 +101,6 @@ def train_nn(net, train_dataset: Dataset, val_dataset: Dataset,
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    print('Training {}, classification: {}'.format(net, is_classification))
-
     if optimizer is None:
         optimizer = torch.optim.Adam(net.parameters(), lr=0.1)
 
@@ -119,13 +120,14 @@ def train_nn(net, train_dataset: Dataset, val_dataset: Dataset,
 
     # Dataloaders
     # params = {'batch_size': 64, 'num_workers': 4}
-    train_dataloader = DataLoader(train_dataset, batch_size=64, num_workers=4)
-    val_dataloader = DataLoader(val_dataset, batch_size=10, num_workers=4)
+    train_dataloader = make_dataloader(train_dataset)
+    val_dataloader = make_dataloader(val_dataset)
 
     # Start main training loop
     epoch = 0
+    max_epochs = 20
     val_crit = []
-    while not meets_patience_termination_cond(val_crit, patience):
+    while not meets_patience_termination_cond(val_crit, patience) and epoch < max_epochs:
 
         # Loop through training batches
         for inputs, targets in train_dataloader:
@@ -152,7 +154,6 @@ def train_nn(net, train_dataset: Dataset, val_dataset: Dataset,
         epoch += 1
 
         # Check val criterion
-        count = 0
         total_loss = 0
         for inputs, targets in val_dataloader:
             inputs = inputs.to(device)
@@ -161,9 +162,10 @@ def train_nn(net, train_dataset: Dataset, val_dataset: Dataset,
                 targets = targets.squeeze()
             outputs = net(inputs)
             total_loss += criterion(outputs, targets)
-            count += 1
-        val_crit.append(total_loss / count)
-        print('{{"metric": "Epoch val {}", "value": {}}}'.format(crit_name, val_crit[-1]))
+        n_val_batches = len(val_dataloader)
+        if n_val_batches > 0:
+            val_crit.append(total_loss / n_val_batches)
+            print('{{"metric": "Epoch val {}", "value": {}}}'.format(crit_name, val_crit[-1]))
 
 
 def meets_patience_termination_cond(val_crit, patience, patience_rel_tol=0.001):
