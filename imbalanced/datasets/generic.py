@@ -140,6 +140,21 @@ class DatasetPartition(DatasetWrapper):
         """
         return self.stop - self.start
 
+    @property
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
+
+        Returns:
+            The arguments, as a list of tuples (arg_name, arg_value).
+
+        """
+        return [
+            ('dataset', self.dataset),
+            ('start', self.start),
+            ('stop', self.stop)
+        ]
+
 
 class PartitionedDataset(DatasetWrapper):
     """Partitioned dataset wrapper.
@@ -233,9 +248,9 @@ class PartitionedDataset(DatasetWrapper):
             raise AttributeError()
 
     @property
-    def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments ('c-args') which define
-        the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
             The arguments, as a list of tuples (arg_name, arg_value).
@@ -245,6 +260,15 @@ class PartitionedDataset(DatasetWrapper):
             ('dataset', self.dataset),
             ('partitions', self.partitions)
         ]
+
+    def __repr__(self) -> str:
+        """Get a string representation of the current object.
+
+        Returns:
+            The string representation.
+
+        """
+        return '<{}({})>'.format(self.__class__.__name__, self.args)
 
 
 class ResampledDataset(DatasetWrapper):
