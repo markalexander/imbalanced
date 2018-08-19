@@ -9,10 +9,9 @@ from typing import List, Optional, Tuple, Any
 from torch.utils.data import Dataset
 from imbalanced.datasets import ResampledDataset
 from .samplers import IndexSampler, RandomTargetedResampler
-from .meta import CanonicalArgsMixin
 
 
-class Pipeline(CanonicalArgsMixin):
+class Pipeline:
     """Imbalanced data pipeline."""
 
     def __init__(self, predictor: Any,
@@ -90,9 +89,9 @@ class Pipeline(CanonicalArgsMixin):
         return self.predict(inputs)
 
     @property
-    def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments ('c-args') which define
-        the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
             The arguments, as a list of tuples (arg_name, arg_value).
@@ -102,6 +101,15 @@ class Pipeline(CanonicalArgsMixin):
             ('predictor', self.predictor),
             ('sampler', self.sampler),
         ]
+
+    def __repr__(self) -> str:
+        """Get a string representation of the current object.
+
+        Returns:
+            The string representation.
+
+        """
+        return '<{}({})>'.format(self.__class__.__name__, self.args)
 
 
 class AutoPipeline(Pipeline):

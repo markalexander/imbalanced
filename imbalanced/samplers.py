@@ -8,7 +8,8 @@ from typing import Any
 from math import floor
 import numpy as np
 from abc import abstractmethod
-from torch.utils.data import TensorDataset
+from random import random
+from torch.utils.data import TensorDataset, DataLoader
 
 
 class IndexSampler:
@@ -45,6 +46,12 @@ class RandomResampler(IndexSampler):
 
     def get_sample_indices(self, dataset):
         return resample_indices(np.arange(len(dataset)), self.rate)
+
+    @property
+    def args(self):
+        return [
+            ('rate', self.rate)
+        ]
 
 
 class RandomTargetedResampler(RandomResampler):
@@ -99,6 +106,13 @@ class RandomTargetedResampler(RandomResampler):
         np.random.shuffle(all_indices)
         return all_indices
 
+    @property
+    def args(self):
+        return [
+            ('resample_target_value', self.resample_target_value),
+            ('rate', self.rate)
+        ]
+
 
 def resample_indices(all_indices, rate: float):
     """Randomly resample the given indices in proportion to the given rate.
@@ -138,3 +152,34 @@ def resample_indices(all_indices, rate: float):
         target_len = int(round(rate * len(all_indices)))
         sampled_indices.extend(all_indices[:target_len])
     return np.array(sampled_indices, dtype=np.int)
+
+
+class ProportionalSubsampler(IndexSampler):
+
+    def __init__(self, resample_target_value: Any) -> None:
+        super().__init__()
+        self.resample_target_value = resample_target_value
+
+    def get_sample_indices(self, dataset: TensorDataset):
+        densities, bins = batched_density(dataset)
+        for _, targets in DataLoader(dataset, batch_size=len(dataset)):
+            sample_indices = []
+            bin_indices = np.digitize(targets.numpy(), bins)
+            for idx, bin_idx in enumerate(bin_indices):
+                if random() > densities[bin_idx]:
+                    # Keep
+                    sample_indices.append(idx)
+            return sample_indices
+
+    @property
+    def args(self):
+        return [
+            ('resample_target_value', self.resample_target_value)
+        ]
+
+
+def batched_density(dataset):
+    loader = DataLoader(dataset, batch_size=len(dataset))
+    for _, targets in loader:
+        return np.histogram(targets.numpy())
+

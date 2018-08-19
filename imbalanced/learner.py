@@ -2,14 +2,13 @@
 
 from typing import List, Tuple, Any, Optional
 from types import FunctionType
-from .meta import CanonicalArgsMixin
 from torch.nn import Linear
 from torch.nn.init import xavier_uniform
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
 
-class LearningAlgorithm(CanonicalArgsMixin):
+class LearningAlgorithm:
     """Defines (the key elements of) a learning algorithm."""
 
     def __init__(self, criterion: _Loss,
@@ -132,9 +131,9 @@ class LearningAlgorithm(CanonicalArgsMixin):
         self._patience = patience
 
     @property
-    def c_args(self) -> List[Tuple[str, Any]]:
-        """Get the canonical (ordered) list of arguments ('c-args') which define
-        the current object.
+    def args(self) -> List[Tuple[str, Any]]:
+        """Get the canonical (ordered) list of arguments which define the
+        current object.
 
         Returns:
             The arguments, as a list of tuples (arg_name, arg_value).
@@ -144,6 +143,15 @@ class LearningAlgorithm(CanonicalArgsMixin):
             ('criterion', self.criterion),
             ('optimizer', self.optimizer)
         ]
+
+    def __repr__(self) -> str:
+        """Get a string representation of the current object.
+
+        Returns:
+            The string representation.
+
+        """
+        return '<{}({})>'.format(self.__class__.__name__, self.args)
 
 
 def xavier_uniform_init(m):
