@@ -4,7 +4,6 @@
 Imbalanced learning tools and experimental framework for PyTorch.
 Big data friendly.
 
-<!--REPORT-IGNORE-->
 **This is pre-alpha software.  Not all planned features are implemented.
 Features and the exposed API are likely to change.**
 
@@ -23,7 +22,6 @@ Features and the exposed API are likely to change.**
   - [FAQ](#faq)
 
 ----
-<!--/REPORT-IGNORE-->
 
 
 ## Quick Start
@@ -34,7 +32,6 @@ Install the package with pip:
 
     pip install git+https://github.com/markalexander/imbalanced.git#egg=imbalanced
 
-<!--REPORT-IGNORE-->
 Automatically choose a reasonable pipeline, train it, and test:
 
 ```python
@@ -67,7 +64,6 @@ Manually set up a pipeline with random subsampling and no calibration:
     predictions = pipeline.predict(dataset.test)
 
 ```
-<!--/REPORT-IGNORE-->
 
 ## Datasets and Wrappers
 
