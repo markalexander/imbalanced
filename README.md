@@ -164,7 +164,7 @@ combination thereof.
     given set of inputs belongs to the minority class or the majority class,
     then uses a separate regressor for each class to obtain the real-valued
     prediction.
-  - `ReconRegressor` - A reconstructed regressor model.  A two-stage model that
+  - `IntermediateClassificationRegressor` - A two-stage model that
     first trains and calibrates a classifier on a binned classification version
     of the dataset, and then uses the outputs of that classifier to reconstruct
     a point estimate.
@@ -193,9 +193,10 @@ This package differs from `imbalanced-learn` in a number of ways:
   - Slightly more flexibility for specialized methods in the exposed APIs.
   
 If you don't need these, then you might want to use `imbalanced-learn` instead.
+It is an excellent, if somewhat more general-purpose, package.
 
 
-### Why no Python 2.7 support?
+### Python 2.7 Support
 
 Python 2.7 is due to be sunset at the end of 2019, with many important and
 widely-used libraries dropping support before then.  For this reason, I haven't
@@ -205,6 +206,7 @@ compatible however, and an automated tool (to remove e.g. type hints and other
 such things) would probably do a reasonable job of making it work on 2.7.
 
 
-### Are there unit tests?
+### Unit Tests
 
-Yes.  These can be discovered and run using pytest.
+Comprehensive unit tests are provided for the various elements.  These can be
+discovered and run using pytest.
