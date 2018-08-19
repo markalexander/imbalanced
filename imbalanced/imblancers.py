@@ -84,7 +84,7 @@ class InflatedFeatureFilteredDataset(DatasetWrapper):
         passes_filter = self.match_type([v == features[k]
                                          for k, v in self.filters.items()])
         if not passes_filter:
-            target = self.inflated_target
+            target = torch.Tensor([self.inflated_target])
         # Return with correct features removed
         return features.index_select(0, self.keep_features), target
 
